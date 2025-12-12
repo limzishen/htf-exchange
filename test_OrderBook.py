@@ -1,0 +1,147 @@
+from OrderBook import OrderBook
+
+# ========================================================
+#                         TESTS
+# ========================================================
+
+print("\n=== Test 1: Insert non-crossing orders ===")
+ob = OrderBook()
+
+ob.add_order("limit", "buy", 100, 5)
+ob.add_order("limit", "buy", 3, 100)     # note: qty first, price second
+ob.add_order("limit", "sell", 4, 105)
+ob.add_order("limit", "sell", 2, 110)
+
+print("Best bid:", ob.best_bid())  # 100
+print("Best ask:", ob.best_ask())  # 105
+
+
+print("\n=== Test 2: Add crossing buy order ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 5, 100)
+ob.add_order("limit", "buy", 3, 99)
+ob.add_order("limit", "sell", 4, 105)
+ob.add_order("limit", "sell", 2, 110)
+ob.add_order("limit", "buy", 20, 110)  # this crosses all asks
+print("Best bid:", ob.best_bid())  # 110
+print("Best ask:", ob.best_ask())  # None
+
+
+print("\n=== Test 3: FIFO same-price queue ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 5, 100)
+ob.add_order("limit", "buy", 50, 100)
+ob.add_order("limit", "sell", 10, 105)
+ob.add_order("limit", "sell", 20, 105)
+ob.add_order("limit", "sell", 50, 110)
+ob.add_order("limit", "sell", 250, 115)
+
+print("Before crossing:", ob.get_all_pending_orders())
+ob.add_order("limit", "sell", 3, 100)  # hits ID 0 first
+print("After 1st cross:", ob.get_all_pending_orders())
+ob.add_order("limit", "sell", 42, 100)  # hits ID 1 next
+print("After 2nd cross:", ob.get_all_pending_orders())
+print(ob)
+
+print("\n=== Test 4: Cancel order ===")
+ob = OrderBook()
+target = ob.add_order("limit", "buy", 5, 100)
+ob.add_order("limit", "buy", 50, 100)
+ob.add_order("limit", "sell", 10, 105)
+ob.add_order("limit", "sell", 20, 105)
+print("Before cancel:", ob.get_all_pending_orders())
+print(ob)
+ob.cancel_order(target)
+print("After cancel:", ob.get_all_pending_orders())
+print(ob)
+
+print("\n=== Test 5: Simple partial match ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 55, 100)
+ob.add_order("limit", "sell", 40, 110)
+ob.add_order("limit", "sell", 10, 105)
+print("Best bid:", ob.best_bid())
+print("Best ask:", ob.best_ask())
+
+print("\n=== Test 6: Partial fill on both sides ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 10, 100)
+ob.add_order("limit", "sell", 25, 100)
+print(ob.get_all_pending_orders())
+print(ob)
+
+print("\n=== Test 7: Sweep through multiple ask levels ===")
+ob = OrderBook()
+ob.add_order("limit", "sell", 5, 101)
+ob.add_order("limit", "sell", 5, 102)
+ob.add_order("limit", "sell", 5, 103)
+ob.add_order("limit", "buy", 20, 200)  # should take 5@101, 5@102, 5@103
+print(ob)
+print("Last Traded Price:", ob.last_price)
+
+print("\n=== Test 8: Sweep through multiple bid levels ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 5, 99)
+ob.add_order("limit", "buy", 5, 97)
+ob.add_order("limit", "buy", 5, 98)
+ob.add_order("limit", "sell", 20, 90)  # should take 5@99, 5@98, 5@97
+print(ob)
+print("Last Traded Price:", ob.last_price)
+
+print("\n=== Test 9: Cancel middle of FIFO queue ===")
+ob = OrderBook()
+o1 = ob.add_order("limit", "buy", 5, 100)
+o2 = ob.add_order("limit", "buy", 6, 100)
+o3 = ob.add_order("limit", "buy", 7, 100)
+print("Remaining:", ob.get_all_pending_orders())
+print(ob)
+ob.cancel_order(o2)
+print("Remaining:", ob.get_all_pending_orders())
+print(ob)
+
+print("\n=== Test 10: Best bid/ask when book becomes empty ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 5, 100)
+ob.add_order("limit", "sell", 5, 100)  # trades and empties book
+print("best bid:", ob.best_bid())
+print("best ask:", ob.best_ask())
+
+print("\n=== Test 11: Stress FIFO correctness ===")
+ob = OrderBook()
+for _ in range(5):
+    ob.add_order("limit", "buy", 10, 100)
+ob.add_order("limit", "sell", 42, 100)  # should eat 4 orders fully, last partially
+print([str(x) for x in ob.get_all_pending_orders()])
+print(ob)
+
+print("\n=== Test 12: Large imbalance (big ask hits many bids) ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 10, 100)
+ob.add_order("limit", "buy", 10, 99)
+ob.add_order("limit", "buy", 10, 98)
+ob.add_order("limit", "sell", 100, 95)  # Should clear all bids
+print(ob)
+
+print("\n=== Test 13: Add then cancel everything ===")
+ob = OrderBook()
+o1 = ob.add_order("limit", "sell", 10, 105)
+o2 = ob.add_order("limit", "sell", 20, 106)
+ob.cancel_order(o1)
+ob.cancel_order(o2)
+print(ob)
+
+print("\n=== Test 14: Cancel non-existent order ===")
+ob = OrderBook()
+o1 = ob.add_order("limit", "sell", 10, 105)
+o2 = ob.add_order("limit", "sell", 20, 106)
+ob.cancel_order("dummy")  # Order not found!
+print(ob)
+
+print("\n=== Test 15: Multiple partials before level removed ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 30, 100)
+ob.add_order("limit", "sell", 10, 100)
+ob.add_order("limit", "sell", 10, 50)
+ob.add_order("limit", "sell", 10, 80)  # last fill empties buy side
+print(ob)
+print(ob.last_price)
