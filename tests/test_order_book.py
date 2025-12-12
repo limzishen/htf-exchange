@@ -4,7 +4,7 @@ from htf_engine.order_book import OrderBook
 #                         TESTS
 # ========================================================
 
-print("\n=== Test 1: Insert non-crossing orders ===")
+print("=== Test 1: Insert non-crossing orders ===")
 ob = OrderBook()
 
 ob.add_order("limit", "buy", 5, 95)

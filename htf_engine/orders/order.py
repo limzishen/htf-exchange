@@ -1,4 +1,3 @@
-
 class Order:
     VALID_SIDES = {"buy", "sell"}
     
