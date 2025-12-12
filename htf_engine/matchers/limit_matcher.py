@@ -14,15 +14,12 @@ class LimitOrderMatcher(Matcher):
             price_cmp = lambda best_price: best_price >= order.price
 
         while order.qty > 0 and best_prices_heap:
+            print(best_prices_heap)
             best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
             if not price_cmp(best_price):
                 break
-            
-            if best_price not in book:
-                heapq.heappop(best_prices_heap)
-                continue
 
-            resting_order = book[best_price][0]
+            resting_order = book[best_price][0]  # first order in deque
             traded_qty = min(order.qty, resting_order.qty)
             order.qty -= traded_qty
             resting_order.qty -= traded_qty
@@ -32,9 +29,12 @@ class LimitOrderMatcher(Matcher):
             order_book.last_price = trade_price
 
             if resting_order.qty == 0:
+                # full order destroyed
                 book[best_price].popleft()
                 del order_book.order_map[resting_order.order_id]
 
-                if not book[best_price]:  # only pop heap if price level empty
+                # pop one duplicate for this full order
+                heapq.heappop(best_prices_heap)
+
+                if not book[best_price]:  # no more orders at this price
                     del book[best_price]
-                    heapq.heappop(best_prices_heap)
