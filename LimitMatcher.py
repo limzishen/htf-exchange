@@ -3,17 +3,17 @@ from Matcher import Matcher
 
 class LimitOrderMatcher(Matcher):
     def match(self, order_book, order):
-        if order.side == "buy":
+        if order.is_buy_order():
             best_prices_heap = order_book.best_asks
             book = order_book.asks
             price_cmp = lambda best_price: best_price <= order.price
         else:
             best_prices_heap = order_book.best_bids
             book = order_book.bids
-            price_cmp = lambda best_price: -best_prices_heap[0] >= order.price
+            price_cmp = lambda best_price: best_price >= order.price
 
         while order.qty > 0 and best_prices_heap:
-            best_price = best_prices_heap[0] if order.side == "buy" else -best_prices_heap[0]
+            best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
             if not price_cmp(best_price):
                 break
 

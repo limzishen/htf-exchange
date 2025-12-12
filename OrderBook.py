@@ -12,13 +12,13 @@ class OrderBook:
         self.best_bids = []
         self.best_asks = []
         self.order_id_counter = itertools.count()
+        self.last_price = None
 
         self.matchers = {
             "limit": LimitOrderMatcher()
         }
 
     def _add_to_book(self, order):
-        """Add a resting order (limit/IOC/FOK) to the book without matching yet."""
         if order.side == "buy":
             self.bids[order.price].append(order)
             heapq.heappush(self.best_bids, -order.price)
@@ -32,18 +32,23 @@ class OrderBook:
         if order_type == "limit":
             order = LimitOrder(oid, side, price, qty)
         # elif order_type == "market":
-        #     order = MarketOrder(oid, side, qty)
+        #     TODO
         # elif order_type == "ioc":
-        #     order = IOCOrder(oid, side, price, qty)
+        #     TODO
         # elif order_type == "fok":
-        #     order = FOKOrder(oid, side, price, qty)
+        #     TODO
 
         # Execute matching first
         self.matchers[order_type].match(self, order)
 
-        # Add remaining resting quantity to the book if needed
-        if order_type in ("limit", "ioc", "fok") and order.qty > 0:
-            self._add_to_book(order)
+        # Add remaining resting quantity to the book if needed (eg limit order)
+        if order_type in ("limit",) and order.qty > 0:
+            if order.is_buy_order():
+                self.bids[order.price].append(order)
+                heapq.heappush(self.best_bids, -order.price)
+            else:
+                self.asks[order.price].append(order)
+                heapq.heappush(self.best_asks, order.price)
             self.order_map[oid] = order
 
         return oid
@@ -63,15 +68,15 @@ class OrderBook:
             return False
 
         order = self.order_map[order_id]
-        queue = self.bids[order.price] if order.side == "buy" else self.asks[order.price]
+        queue = self.bids[order.price] if order.is_buy_order() else self.asks[order.price]
 
         try:
             queue.remove(order)
         except ValueError:
-            pass
+            pass            # Handle this error more gracefully plsssss
 
         if not queue:
-            if order.side == "buy":
+            if order.is_buy_order():
                 self.best_bids.remove(-order.price)
                 heapq.heapify(self.best_bids)
             else:

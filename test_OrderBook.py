@@ -8,7 +8,7 @@ print("\n=== Test 1: Insert non-crossing orders ===")
 ob = OrderBook()
 
 ob.add_order("limit", "buy", 100, 5)
-ob.add_order("limit", "buy", 3, 100)     # note: qty first, price second
+ob.add_order("limit", "buy", 3, 100)   
 ob.add_order("limit", "sell", 4, 105)
 ob.add_order("limit", "sell", 2, 110)
 
