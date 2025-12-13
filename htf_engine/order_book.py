@@ -125,3 +125,46 @@ class OrderBook:
         rows.append(f"Best Ask: {self.best_ask()}")
 
         return "\n".join(rows)
+    
+    def _snapshot_side(self, side_levels):
+        """
+        Representation of one side (bids or asks).
+        Ignores empty price levels.
+        Preserves FIFO at each price (deque order).
+        """
+        snap = []
+        for price in sorted(side_levels.keys()):
+            q = side_levels[price]
+            if not q:
+                continue
+
+            orders = []
+            for o in q:
+                # capture only state that defines the book
+                orders.append((
+                    getattr(o, "order_id", None),
+                    getattr(o, "side", None),
+                    getattr(o, "price", None),
+                    getattr(o, "qty", None),
+                    o.__class__.__name__,  # "LimitOrder", "IOCOrder", etc.
+                ))
+            snap.append((price, tuple(orders)))
+        return tuple(snap)
+
+    def snapshot(self):
+        """
+        Snapshot used for equality / tests.
+        Does NOT rely on heap internal ordering.
+        """
+        return {
+            "bids": self._snapshot_side(self.bids),
+            "asks": self._snapshot_side(self.asks),
+            "best_bid": self.best_bid(),
+            "best_ask": self.best_ask(),
+            "last_price": self.last_price,
+        }
+
+    def __eq__(self, other):
+        if not isinstance(other, OrderBook):
+            return NotImplemented
+        return self.snapshot() == other.snapshot()
