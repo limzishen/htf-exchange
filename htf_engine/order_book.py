@@ -85,17 +85,6 @@ class OrderBook:
         print("Order not found!!")
         return False
 
-        if not queue:
-            if order.is_buy_order():
-                self.best_bids.remove(-order.price)
-                heapq.heapify(self.best_bids)
-            else:
-                self.best_asks.remove(order.price)
-                heapq.heapify(self.best_asks)
-
-        del self.order_map[order_id]
-        return True
-
     def record_trade(self, price, qty, buy_order, sell_order, aggressor):
         trade = self.trade_log.record(
             price=price,
