@@ -4,6 +4,7 @@ from .order import Order
 class FOKOrder(Order):
     def __init__(self, order_id, side, price, qty, user_id, timestamp):
         super().__init__(order_id, side, qty, user_id, timestamp)
+        self.order_type = "fok"
         self.price = price
 
     def __str__(self):

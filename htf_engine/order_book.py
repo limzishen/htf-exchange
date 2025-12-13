@@ -65,6 +65,27 @@ class OrderBook:
 
         return order_uuid
 
+    def modify_order(self, order_id, new_qty, new_price):
+        if order_id not in self.order_map:
+            print("Order not found!!")
+            return False
+
+        curr_order = self.order_map[order_id]
+        if curr_order.price != new_price or new_qty > curr_order.qty:
+            self.cancelled_orders.add(order_id)
+            return self.add_order(curr_order.order_type, curr_order.side, new_qty, new_price, curr_order.user_id)
+
+        if new_qty < curr_order.qty:
+            curr_order.qty = new_qty
+            print("Quantity updated!")
+            return curr_order.order_id
+
+        print("No change to order!")
+        return order_id
+
+
+
+
     def clean_orders(self, order_heap, queue_dict):
         while order_heap and order_heap[0][2] in self.cancelled_orders:
             if queue_dict == self.bids:
