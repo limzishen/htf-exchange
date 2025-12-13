@@ -1,9 +1,11 @@
 from collections import defaultdict, deque
 import heapq
 import itertools
+from .matchers.fok_matcher import FOKOrderMatcher
 from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
 from .matchers.market_matcher import MarketOrderMatcher
+from .orders.fok_order import FOKOrder
 from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
@@ -21,9 +23,10 @@ class OrderBook:
         self.last_price = None
 
         self.matchers = {
+            "fok": FOKOrderMatcher(),
+            "ioc": IOCOrderMatcher(),
             "limit": LimitOrderMatcher(),
             "market": MarketOrderMatcher(),
-            "ioc": IOCOrderMatcher(),
         }
 
         self.trade_log = TradeLog()
@@ -37,8 +40,8 @@ class OrderBook:
             order = MarketOrder(oid, side, qty)
         elif order_type == "ioc":
             order = IOCOrder(oid, side, price, qty)
-        # elif order_type == "fok":
-        #     TODO
+        elif order_type == "fok":
+            order = FOKOrder(oid, side, price, qty)
 
         # Execute matching
         self.matchers[order_type].match(self, order)
