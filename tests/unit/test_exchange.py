@@ -68,6 +68,6 @@ class TestExchange:
         assert len(u3.positions) == 1
         assert u3.realised_pnl == 0
         assert u3.get_unrealised_pnl() == 0     # Prices haven't moved yet
-        assert u3.get_total_exposure() == 1000   # User 3 owns 50 shares @ $20 each
+        assert u3.get_total_exposure() == 1000  # User 3 owns 50 shares @ $20 each
 
         

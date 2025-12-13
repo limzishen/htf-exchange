@@ -17,7 +17,7 @@ def exchange():
 
 @pytest.fixture
 def u1():
-    return User("ceo_of_fumbling", "Zi Shen", 1000)
+    return User("ceo_of_fumbling", "Zi Shen", 500)
 
 @pytest.fixture
 def u2():
