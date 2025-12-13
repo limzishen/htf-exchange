@@ -14,13 +14,6 @@ class TestOrderBookInitialization:
         assert ob.best_bid() is None
         assert ob.best_ask() is None
         assert ob.last_price is None
-
-    def test_order_ids_increment(self, ob):
-        """Check that order IDs are assigned incrementally."""
-        id1 = ob.add_order("limit", "buy", 10, 100)
-        id2 = ob.add_order("limit", "sell", 10, 101)
-        id3 = ob.add_order("limit", "buy", 10, 99)
-        assert (id1, id2, id3) == (0, 1, 2)
     
     def test_two_books_equal_after_same_ops(self, ob):
         ob2 = OrderBook("NVDA")
@@ -46,6 +39,17 @@ class TestOrderBookState:
     def test_get_all_pending_orders_empty(self, ob):
         """Get all pending orders from an empty order book."""
         assert ob.get_all_pending_orders() == []
+
+    def test_all_orders_id_are_unique(self, ob):
+        """Check all orders ids are unique."""
+        ob.add_order("limit", "buy", 5, 100)
+        ob.add_order("limit", "buy", 5, 100)
+        ob.add_order("limit", "buy", 5, 100)
+        ob.add_order("limit", "buy", 5, 100)
+        ob.add_order("limit", "buy", 5, 100)
+
+        assert len([o.order_id for o in ob.bids[100]]) == 5
+        assert len([o.order_id for o in ob.bids[100]]) == len(set([o.order_id for o in ob.bids[100]]))
     
     def test_noncrossing_orders_rest(self, ob):
         """Non-crossing orders remain resting in the book."""
@@ -70,7 +74,7 @@ class TestOrderBookState:
         ]:
             expected.add_order(*args)
 
-        assert ob == expected
+        assert ob != expected
         assert ob.best_bid() == 100
         assert ob.best_ask() == 105
 

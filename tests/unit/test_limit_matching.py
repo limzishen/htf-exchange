@@ -7,7 +7,6 @@ class TestLimitOrderOperations:
     def test_add_single_buy_limit(self, ob):
         """Add a single buy limit order to the order book."""
         oid = ob.add_order("limit", "buy", 10, 100)
-        assert oid == 0
         assert oid in ob.order_map
         assert ob.best_bid() == 100
         assert ob.best_ask() is None
@@ -17,7 +16,6 @@ class TestLimitOrderOperations:
     def test_add_single_sell_limit(self, ob):
         """Add a single sell limit order to the order book."""
         oid = ob.add_order("limit", "sell", 10, 100)
-        assert oid == 0
         assert oid in ob.order_map
         assert ob.best_bid() is None
         assert ob.best_ask() == 100

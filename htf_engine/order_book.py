@@ -10,7 +10,8 @@ from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
 from .trades.trade_log import TradeLog
-
+from datetime import datetime, timezone
+import uuid
 
 class OrderBook:
     def __init__(self, instrument):
@@ -19,9 +20,9 @@ class OrderBook:
         self.bids = defaultdict(deque)
         self.asks = defaultdict(deque)
         self.order_map = {}
-        self.best_bids = [] #  (price , oid)
+        self.best_bids = [] #  (price , timestamp, uuid)
         self.best_asks = []
-        self.order_id_counter = itertools.count()
+        self.order_counter = itertools.count()
         self.last_price = None
         self.cancelled_orders = set()
 
@@ -36,28 +37,40 @@ class OrderBook:
         self.on_trade_callback = None  # Exchange handler!!
 
     def add_order(self, order_type, side, qty, price=None, user_id=None):
-        oid = next(self.order_id_counter)
+        order_count = next(self.order_counter)
+        timestamp = datetime.now(timezone.utc)
+        data_string = (
+            f"{order_count}|"
+            f"{side}|"
+            f"{self.instrument}|"
+            f"{price}|"
+            f"{user_id}"
+            f"{timestamp}"
+        )
+        # Create a Unique ID for each order
+        order_uuid = str(uuid.uuid5(uuid.NAMESPACE_OID, data_string))
+
         # create order object
         if order_type == "limit":
-            order = LimitOrder(oid, side, price, qty, user_id)
+            order = LimitOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "market":
-            order = MarketOrder(oid, side, qty, user_id)
+            order = MarketOrder(order_uuid, side, qty, user_id, timestamp)
         elif order_type == "ioc":
-            order = IOCOrder(oid, side, price, qty, user_id)
+            order = IOCOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "fok":
-            order = FOKOrder(oid, side, price, qty, user_id)
+            order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
 
         # Execute matching
         self.matchers[order_type].match(self, order)
 
-        return oid
+        return order_uuid
 
     def clean_orders(self, order_heap, queue_dict):
-        while order_heap and order_heap[0][1] in self.cancelled_orders:
+        while order_heap and order_heap[0][2] in self.cancelled_orders:
             if queue_dict == self.bids:
-                order_price, oid_to_clean = -order_heap[0][0], order_heap[0][1]
+                order_price, timestamp, oid_to_clean = -order_heap[0][0], order_heap[0][1], order_heap[0][2]
             else:
-                order_price, oid_to_clean = order_heap[0]
+                order_price, timestamp, oid_to_clean = order_heap[0]
             removed_order = queue_dict[order_price].popleft()
 
             if oid_to_clean in self.order_map:

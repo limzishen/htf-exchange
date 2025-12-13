@@ -10,6 +10,7 @@ class TestOrderCancellation:
         assert ob.cancel_order(oid) is True
         assert oid in ob.cancelled_orders
         assert ob.best_bid() is None
+        print(ob.bids)
         assert _total_resting(ob.bids) == 0
 
     def test_cancel_order_is_removed_from_canceled_order(self, ob):

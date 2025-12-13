@@ -63,6 +63,16 @@ print(ob)
 print("After cancel:", ob.get_all_pending_orders())
 print(ob)
 
+print("\n=== Test 4.5: Cancel order ===")
+ob = OrderBook("NVDA")
+target = ob.add_order("limit", "buy", 5, 100)
+print(target)
+print(ob.cancel_order(target))
+print(ob.best_bid())
+print(ob)
+print(ob.best_bids)
+print(ob.bids)
+
 
 print("\n=== Test 5: Simple partial match ===")
 ob = OrderBook("NVDA")
