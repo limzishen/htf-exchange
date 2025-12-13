@@ -9,6 +9,7 @@ class Exchange:
 
     def register_user(self, user: User):
         self.users[user.user_id] = user
+        user.exchange = self
 
     def add_order_book(self, instrument, ob: OrderBook):
         self.order_books[instrument] = ob
