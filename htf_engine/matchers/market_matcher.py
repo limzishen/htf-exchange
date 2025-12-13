@@ -12,7 +12,8 @@ class MarketOrderMatcher(Matcher):
             book = order_book.bids
 
         while order.qty > 0 and best_prices_heap:
-            best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
+            order_book.clean_orders(best_prices_heap, book)
+            best_price = best_prices_heap[0][0] if order.is_buy_order() else -best_prices_heap[0][0]
 
             resting_order = book[best_price][0]  # first order in deque
             traded_qty = min(order.qty, resting_order.qty)

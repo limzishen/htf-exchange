@@ -1,3 +1,4 @@
+
 class Matcher:
 
     """Base class for all matchers."""

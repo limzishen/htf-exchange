@@ -19,10 +19,11 @@ class OrderBook:
         self.bids = defaultdict(deque)
         self.asks = defaultdict(deque)
         self.order_map = {}
-        self.best_bids = []
+        self.best_bids = [] #  (price , oid)
         self.best_asks = []
         self.order_id_counter = itertools.count()
         self.last_price = None
+        self.cancelled_orders = set()
 
         self.matchers = {
             "fok": FOKOrderMatcher(),
@@ -51,28 +52,38 @@ class OrderBook:
 
         return oid
 
+    def clean_orders(self, order_heap, queue_dict):
+        while order_heap and order_heap[0][1] in self.cancelled_orders:
+            if queue_dict == self.bids:
+                order_price, oid_to_clean = -order_heap[0][0], order_heap[0][1]
+            else:
+                order_price, oid_to_clean = order_heap[0]
+            removed_order = queue_dict[order_price].popleft()
+
+            if oid_to_clean in self.order_map:
+                del self.order_map[oid_to_clean]
+            heapq.heappop(order_heap)
+            self.cancelled_orders.remove(oid_to_clean)
+            print(f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap")
+
+
     def best_bid(self):
-        return -self.best_bids[0] if self.best_bids else None
+        self.clean_orders(self.best_bids, self.bids)
+        return -self.best_bids[0][0] if self.best_bids else None
 
     def best_ask(self):
-        return self.best_asks[0] if self.best_asks else None
+        self.clean_orders(self.best_asks, self.asks)
+        return self.best_asks[0][0] if self.best_asks else None
 
     def get_all_pending_orders(self):
-        return list(map(str, self.order_map.values()))
+        return [str(v) for v in self.order_map.values() if v.order_id not in self.cancelled_orders]
 
     def cancel_order(self, order_id):
-        if order_id not in self.order_map:
-            print("Order not found!!")
-            return False
-
-        order = self.order_map[order_id]
-        queue = self.bids[order.price] if order.is_buy_order() else self.asks[order.price]
-
-        try:
-            queue.remove(order)
-        except ValueError:
-            print(f"[WARN] Order {order_id} not found inside its price level queue.")
-            return False
+        if order_id in self.order_map:
+            self.cancelled_orders.add(order_id)
+            return True
+        print("Order not found!!")
+        return False
 
         if not queue:
             if order.is_buy_order():
@@ -135,3 +146,46 @@ class OrderBook:
         rows.append(f"Best Ask: {self.best_ask()}")
 
         return "\n".join(rows)
+
+    def _snapshot_side(self, side_levels):
+        """
+        Representation of one side (bids or asks).
+        Ignores empty price levels.
+        Preserves FIFO at each price (deque order).
+        """
+        snap = []
+        for price in sorted(side_levels.keys()):
+            q = side_levels[price]
+            if not q:
+                continue
+
+            orders = []
+            for o in q:
+                # capture only state that defines the book
+                orders.append((
+                    getattr(o, "order_id", None),
+                    getattr(o, "side", None),
+                    getattr(o, "price", None),
+                    getattr(o, "qty", None),
+                    o.__class__.__name__,  # "LimitOrder", "IOCOrder", etc.
+                ))
+            snap.append((price, tuple(orders)))
+        return tuple(snap)
+
+    def snapshot(self):
+        """
+        Snapshot used for equality / tests.
+        Does NOT rely on heap internal ordering.
+        """
+        return {
+            "bids": self._snapshot_side(self.bids),
+            "asks": self._snapshot_side(self.asks),
+            "best_bid": self.best_bid(),
+            "best_ask": self.best_ask(),
+            "last_price": self.last_price,
+        }
+
+    def __eq__(self, other):
+        if not isinstance(other, OrderBook):
+            return NotImplemented
+        return self.snapshot() == other.snapshot()

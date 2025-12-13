@@ -28,7 +28,8 @@ class FOKOrderMatcher(Matcher):
             return
 
         while order.qty > 0 and best_prices_heap:
-            best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
+            order_book.clean_orders(best_prices_heap, book)
+            best_price = best_prices_heap[0][0] if order.is_buy_order() else -best_prices_heap[0][0]
             
             if not price_cmp(best_price): # by right this should never run, since we checked that theres enough liquidity
                 break
