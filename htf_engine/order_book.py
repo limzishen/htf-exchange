@@ -19,6 +19,9 @@ from .orders.market_order import MarketOrder
 
 # further optimization
 # somehow remove the cancelled trades from the set
+
+# Pending fix
+# all pending orders
 class OrderBook:
     def __init__(self):
         self.bids = defaultdict(deque) # {order price: deque[order....] }
@@ -62,32 +65,31 @@ class OrderBook:
 
         return oid
 
-    def clean_orders_in_heap(self, order_heap):
+    def clean_orders(self, order_heap, queue_dict):
         while order_heap and order_heap[0][1] in self.cancelled_orders:
-            oid_to_clean = order_heap[0][1]
+            if queue_dict == self.bids:
+                order_price, oid_to_clean = -order_heap[0][0], order_heap[0][1]
+            else:
+                order_price, oid_to_clean = order_heap[0]
+            removed_order = queue_dict[order_price].popleft()
+
             if oid_to_clean in self.order_map:
                 del self.order_map[oid_to_clean]
             heapq.heappop(order_heap)
-
-    def clean_orders_in_queue(self, order_queue):
-        while order_queue and order_queue[0].order_id in self.cancelled_orders:
-            oid_to_clean = order_queue[0].order_id
-            if oid_to_clean in self.order_map:
-                del self.order_map[oid_to_clean]
-            order_queue.popleft()
+            self.cancelled_orders.remove(oid_to_clean)
+            print(f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap")
 
 
     def best_bid(self):
-        self.clean_orders_in_heap(self.best_bids)
+        self.clean_orders(self.best_bids, self.bids)
         return -self.best_bids[0][0] if self.best_bids else None
 
     def best_ask(self):
-        # clear dirty flagged values
-        self.clean_orders_in_heap(self.best_asks)
+        self.clean_orders(self.best_asks, self.asks)
         return self.best_asks[0][0] if self.best_asks else None
 
     def get_all_pending_orders(self):
-        return [str(v) for v in self.order_map.values() if v not in self.cancelled_orders]
+        return [str(v) for v in self.order_map.values() if v.order_id not in self.cancelled_orders]
 
     def cancel_order(self, order_id):
         if order_id in self.order_map:

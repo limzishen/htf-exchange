@@ -53,11 +53,13 @@ print("\n=== Test 4: Cancel order ===")
 ob = OrderBook()
 target = ob.add_order("limit", "buy", 5, 100)
 ob.add_order("limit", "buy", 50, 100)
+print("Before cancel:", ob.get_all_pending_orders())
+ob.cancel_order(target)
 ob.add_order("limit", "sell", 10, 105)
 ob.add_order("limit", "sell", 20, 105)
-print("Before cancel:", ob.get_all_pending_orders())
+
 print(ob)
-ob.cancel_order(target)
+
 print("After cancel:", ob.get_all_pending_orders())
 print(ob)
 

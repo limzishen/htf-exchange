@@ -16,13 +16,11 @@ class LimitOrderMatcher(Matcher):
             price_cmp = lambda best_price: best_price >= order.price
 
         while order.qty > 0 and best_prices_heap:
-            order_book.clean_orders_in_heap(best_prices_heap)
+            order_book.clean_orders(best_prices_heap, book)
             best_price = best_prices_heap[0][0] if order.is_buy_order() else -best_prices_heap[0][0]
             if not price_cmp(best_price):
                 break
 
-            # check if resting order is dirty
-            order_book.clean_orders_in_queue(book[best_price])
             resting_order = book[best_price][0]  # first order in deque
             traded_qty = min(order.qty, resting_order.qty)
             order.qty -= traded_qty
