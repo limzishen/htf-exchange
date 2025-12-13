@@ -1,3 +1,5 @@
+from htf_engine.order_book import OrderBook
+
 def _total_resting(levels) -> int:
     """Total number of resting orders across all price levels."""
     return sum(len(q) for q in levels.values())
@@ -19,6 +21,15 @@ class TestOrderBookInitialization:
         id2 = ob.add_order("limit", "sell", 10, 101)
         id3 = ob.add_order("limit", "buy", 10, 99)
         assert (id1, id2, id3) == (0, 1, 2)
+    
+    def test_two_books_equal_after_same_ops(self, ob):
+        ob2 = OrderBook()
+
+        for ob in (ob, ob2):
+            ob.add_order("limit", "buy", 5, 100)
+            ob.add_order("limit", "sell", 3, 105)
+
+        assert ob == ob2
 
 
 class TestOrderBookState:
