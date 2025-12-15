@@ -57,3 +57,7 @@ class IOCOrderMatcher(Matcher):
 
                 if not book[best_price]:  # no more orders at this price
                     del book[best_price]
+        
+        # must remove any extra from user's positions
+        if order.qty > 0:
+            order_book.cleanup_discarded_order(order)

@@ -25,6 +25,11 @@ class FOKOrderMatcher(Matcher):
 
         if available_qty < order.qty:
             print(f"FOK order {order.order_id} cancelled due to insufficient liquidity")
+            
+            # must remove any extra from user's positions
+            if order.qty > 0:
+                order_book.cleanup_discarded_order(order)
+                
             return
 
         while order.qty > 0 and best_prices_heap:
