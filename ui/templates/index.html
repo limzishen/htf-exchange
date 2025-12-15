@@ -131,5 +131,29 @@ async function refresh() {
 setInterval(refresh, 1000);
 refresh();
 </script>
+
+<script>
+    const orderTypeEl = document.getElementById("order_type");
+    const priceEl = document.getElementById("price");
+    
+    function updatePriceField() {
+        if (orderTypeEl.value === "market") {
+            priceEl.value = "";
+            priceEl.disabled = true;       // optional: prevent typing
+            priceEl.style.background = "#444"; // grey background
+            priceEl.style.color = "#888";      // grey text
+        } else {
+            priceEl.disabled = false;
+            priceEl.style.background = "#fff"; // normal
+            priceEl.style.color = "#fff";        // normal
+            if (!priceEl.value) priceEl.value = "150"; // default value
+        }
+    }
+    
+    orderTypeEl.addEventListener("change", updatePriceField);
+    
+    // Call once on load
+    updatePriceField();
+    </script>
 </body>
 </html>
