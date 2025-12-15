@@ -1,13 +1,17 @@
+from collections import defaultdict
+
 class User:
     def __init__(self, user_id, username, cash_balance=0.0):
         self.user_id = user_id
         self.username = username
-        self.cash_balance = cash_balance
-        self.positions = {}         # instrument -> quantity
-        self.average_cost = {}      # instrument -> avg cost
+        self.cash_balance = cash_balance            # TODO... can ignore for now
         self.realised_pnl = 0.0
-        self.unrealised_pnl = 0.0   # TODO: calculate this efficiently next time
 
+        self.positions = {}                         # instrument -> quantity
+        self.average_cost = {}                      # instrument -> avg cost
+        self.outstanding_buy = defaultdict(int)     # instrument -> qty
+        self.outstanding_sell = defaultdict(int)    # instrument -> qty
+        
         self.exchange = None  # injected later
 
     def cash_in(self, amount):
@@ -17,10 +21,51 @@ class User:
         if amount > self.cash_balance:
             raise ValueError("Insufficient balance")
         self.cash_balance -= amount
+    
+    def can_place_order(self, instrument, side, qty):
+        limit = 100     # TODO: change limit to be configurable
+
+        current = self.positions.get(instrument, 0)
+        outstanding_buy = self.outstanding_buy.get(instrument, 0)
+        outstanding_sell = self.outstanding_sell.get(instrument, 0)
+
+        if side == "buy":
+            return qty <= limit - current - outstanding_buy
+        else:  # sell
+            return qty <= limit + current - outstanding_sell
+
 
     def place_order(self, exchange, instrument, order_type, side, qty, price=None):
         """Place order via exchange; exchange returns order id."""
-        return exchange.place_order(self, instrument, order_type, side, qty, price)
+        
+        # --- CHECK LIMIT ---
+        if not self.can_place_order(instrument, side, qty):
+            raise ValueError(f"User {self.user_id} cannot place order: would exceed position limit")
+        
+        # --- UPDATE OUTSTANDING ---
+        if side == "buy":
+            self.outstanding_buy[instrument] += qty
+        else:
+            self.outstanding_sell[instrument] += qty
+
+        # Place order through exchange
+        order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
+        return order_id
+
+    def cancel_order(self, order_id, instrument=None):
+        if self.exchange is None:
+            raise ValueError("User is not registered with any exchange.")
+        
+        if instrument:
+            return self.exchange.cancel_order(self, instrument, order_id)
+        
+        # If instrument not provided, search all order books
+        for inst, ob in self.exchange.order_books.items():
+            if order_id in ob.order_map:
+                return self.exchange.cancel_order(self, inst, order_id)
+        
+        print("Order ID not found!")
+        return False
 
     def update_positions(self, trade, instrument):
         qty = trade.qty
@@ -31,6 +76,8 @@ class User:
 
         # BUY
         if trade.buy_user_id == self.user_id:
+            self.outstanding_buy[instrument] -= qty
+
             if old_qty >= 0:
                 # increasing long OR opening long
                 new_qty = old_qty + qty
@@ -46,6 +93,8 @@ class User:
 
         # SELL
         elif trade.sell_user_id == self.user_id:
+            self.outstanding_sell[instrument] -= qty
+
             if old_qty <= 0:
                 # increasing short OR opening short
                 new_qty = old_qty - qty
@@ -90,6 +139,9 @@ class User:
 
     def get_cash_balance(self):
         return self.cash_balance
+    
+    def get_realised_pnl(self):
+        return self.realised_pnl
     
     def get_unrealised_pnl_for_instrument(self, inst):
         if inst not in self.positions:

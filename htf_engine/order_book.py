@@ -143,12 +143,12 @@ class OrderBook:
         ask_lines = []
 
         for price, orders in bid_levels:
-            total_qty = sum(o.qty for o in orders)
+            total_qty = sum(o.qty for o in orders if o.order_id not in self.cancelled_orders)
             if total_qty > 0:
                 bid_lines.append(f"{price:>5} : {total_qty:<5}")
 
         for price, orders in ask_levels:
-            total_qty = sum(o.qty for o in orders)
+            total_qty = sum(o.qty for o in orders if o.order_id not in self.cancelled_orders)
             if total_qty > 0:
                 ask_lines.append(f"{price:>5} : {total_qty:<5}")
 
@@ -185,6 +185,8 @@ class OrderBook:
             orders = []
             for o in q:
                 # capture only state that defines the book
+                if o.order_id in self.cancelled_orders:   # skip cancelled orders
+                    continue
                 orders.append((
                     getattr(o, "order_id", None),
                     getattr(o, "side", None),
