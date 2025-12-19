@@ -18,12 +18,12 @@ class User:
         self.exchange = None  # injected later
 
     def cash_in(self, amount: float) -> None:
-        self.cash_balance += amount
+        self.increase_cash_balance(amount)
 
     def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
             raise ValueError("Insufficient balance")
-        self.cash_balance -= amount
+        self.decrease_cash_balance(amount)
     
     def can_place_order(self, instrument: str, side: str, qty: int) -> bool:
         quota = self.get_remaining_quota(instrument)
@@ -40,9 +40,9 @@ class User:
         
         # --- UPDATE OUTSTANDING ---
         if side == "buy":
-            self.increasing_outstanding_buys(instrument, qty)
+            self.increase_outstanding_buys(instrument, qty)
         else:
-            self.increasing_outstanding_sells(instrument, qty)
+            self.increase_outstanding_sells(instrument, qty)
 
         # Place order through exchange
         order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
@@ -130,6 +130,12 @@ class User:
             for inst, qty in self.positions.items()
         }
 
+    def increase_cash_balance(self, amount: int) -> None:
+        self.cash_balance += amount
+    
+    def decrease_cash_balance(self, amount: int) -> None:
+        self.cash_balance -= amount
+
     def get_cash_balance(self) -> float:
         return self.cash_balance
     
@@ -200,10 +206,10 @@ class User:
             "sell_quota": max(0, sell_quota)
         }
     
-    def increasing_outstanding_buys(self, instrument, qty):
+    def increase_outstanding_buys(self, instrument, qty):
         self.outstanding_buys[instrument] += qty
 
-    def increasing_outstanding_sells(self, instrument, qty):
+    def increase_outstanding_sells(self, instrument, qty):
         self.outstanding_sells[instrument] += qty
 
     def reduce_outstanding_buys(self, instrument, qty):
