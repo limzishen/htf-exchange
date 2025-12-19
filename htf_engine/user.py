@@ -18,14 +18,14 @@ class User:
         self.exchange = None  # injected later
 
     def cash_in(self, amount: float) -> None:
-        self.increase_cash_balance(amount)
+        self._increase_cash_balance(amount)
 
     def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
             raise ValueError("Insufficient balance")
-        self.decrease_cash_balance(amount)
+        self._decrease_cash_balance(amount)
     
-    def can_place_order(self, instrument: str, side: str, qty: int) -> bool:
+    def _can_place_order(self, instrument: str, side: str, qty: int) -> bool:
         quota = self.get_remaining_quota(instrument)
         
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
@@ -35,7 +35,7 @@ class User:
         """Place order via exchange; exchange returns order id."""
         
         # --- CHECK LIMIT ---
-        if not self.can_place_order(instrument, side, qty):
+        if not self._can_place_order(instrument, side, qty):
             raise ValueError(f"User {self.user_id} cannot place order: would exceed position limit")
         
         # --- UPDATE OUTSTANDING ---
@@ -86,8 +86,8 @@ class User:
                 new_avg = old_avg if new_qty < 0 else price
 
             cash_delta = qty * price
-            self.decrease_cash_balance(cash_delta)
-            self.decrease_cash_balance(exchange_fee)
+            self._decrease_cash_balance(cash_delta)
+            self._decrease_cash_balance(exchange_fee)
 
         # SELL
         elif trade.sell_user_id == self.user_id:
@@ -105,8 +105,8 @@ class User:
                 new_avg = old_avg if new_qty > 0 else price
 
             cash_delta = qty * price
-            self.increase_cash_balance(cash_delta)
-            self.decrease_cash_balance(exchange_fee)
+            self._increase_cash_balance(cash_delta)
+            self._decrease_cash_balance(exchange_fee)
 
         # Cleanup
         if new_qty == 0:
@@ -134,10 +134,10 @@ class User:
             for inst, qty in self.positions.items()
         }
 
-    def increase_cash_balance(self, amount: int) -> None:
+    def _increase_cash_balance(self, amount: int) -> None:
         self.cash_balance += amount
     
-    def decrease_cash_balance(self, amount: int) -> None:
+    def _decrease_cash_balance(self, amount: int) -> None:
         self.cash_balance -= amount
 
     def get_cash_balance(self) -> float:
