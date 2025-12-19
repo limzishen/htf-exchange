@@ -3,7 +3,7 @@ from .matcher import Matcher
 
 
 class LimitOrderMatcher(Matcher):
-    def match(self, order_book, order):
+    def match(self, order_book, order) -> None:
         def leftover(order_book, order):
             if order.is_buy_order():
                 order_book.bids[order.price].append(order)

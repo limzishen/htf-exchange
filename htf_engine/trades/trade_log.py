@@ -10,13 +10,13 @@ class TradeLog:
 
     def record(
         self,
-        price,
-        qty,
-        buy_user_id,
-        sell_user_id,
-        buy_order_id,
-        sell_order_id,
-        aggressor
+        price: float,
+        qty: int,
+        buy_user_id: str,
+        sell_user_id: str,
+        buy_order_id: str,
+        sell_order_id: str,
+        aggressor: str
     ):
         if aggressor not in self.VALID_AGGRESSORS:
             raise ValueError(f"Invalid aggressor: {aggressor}")

@@ -8,8 +8,8 @@ class Trade:
     qty: int
     buy_user_id: str
     sell_user_id: str
-    buy_order_id: int
-    sell_order_id: int
+    buy_order_id: str
+    sell_order_id: str
     aggressor: str
 
     def __str__(self):

@@ -1,7 +1,10 @@
 from collections import defaultdict
 
+from htf_engine.trades.trade import Trade
+
+
 class User:
-    def __init__(self, user_id, username, cash_balance=0.0):
+    def __init__(self, user_id: str, username: str, cash_balance: float=0.0):
         self.user_id = user_id
         self.username = username
         self.cash_balance = cash_balance            # TODO... can ignore for now
@@ -14,21 +17,21 @@ class User:
         
         self.exchange = None  # injected later
 
-    def cash_in(self, amount):
+    def cash_in(self, amount: float) -> None:
         self.cash_balance += amount
 
-    def cash_out(self, amount):
+    def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
             raise ValueError("Insufficient balance")
         self.cash_balance -= amount
     
-    def can_place_order(self, instrument, side, qty):
+    def can_place_order(self, instrument: str, side: str, qty: int) -> bool:
         quota = self.get_remaining_quota(instrument)
         
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 
-    def place_order(self, exchange, instrument, order_type, side, qty, price=None):
+    def place_order(self, exchange: str, instrument: str, order_type: str, side: str, qty: int, price: float=None) -> str:
         """Place order via exchange; exchange returns order id."""
         
         # --- CHECK LIMIT ---
@@ -45,7 +48,7 @@ class User:
         order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
         return order_id
 
-    def cancel_order(self, order_id, instrument=None):
+    def cancel_order(self, order_id: str, instrument: str=None) -> bool:
         if self.exchange is None:
             raise ValueError("User is not registered with any exchange.")
         
@@ -60,7 +63,7 @@ class User:
         print("Order ID not found!")
         return False
 
-    def update_positions(self, trade, instrument):
+    def update_positions(self, trade: Trade, instrument: str) -> None:
         qty = trade.qty
         price = trade.price
 
@@ -116,7 +119,7 @@ class User:
 
     # Getters
         
-    def get_positions(self):
+    def get_positions(self) -> dict:
         """
         Returns:
         {
@@ -134,16 +137,15 @@ class User:
             for inst, qty in self.positions.items()
         }
 
-    def get_cash_balance(self):
+    def get_cash_balance(self) -> float:
         return self.cash_balance
     
-    def get_realised_pnl(self):
+    def get_realised_pnl(self) -> float:
         return self.realised_pnl
     
-    def get_unrealised_pnl_for_instrument(self, inst):
+    def get_unrealised_pnl_for_instrument(self, inst) -> float:
         if inst not in self.positions:
-            print(f"User {self.user_id} does not have a position for instrument {inst}!")
-            return None
+            raise ValueError(f"User {self.user_id} has no position in {inst}")
 
         ob = self.exchange.order_books.get(inst)
         if ob is None or ob.last_price is None:
@@ -154,7 +156,7 @@ class User:
 
         return qty * (ob.last_price - avg)
     
-    def get_unrealised_pnl(self):
+    def get_unrealised_pnl(self) -> float:
         total = 0.0
 
         for inst in self.positions:
@@ -162,7 +164,7 @@ class User:
 
         return total
     
-    def get_exposure_for_instrument(self, inst):
+    def get_exposure_for_instrument(self, inst) -> float:
         if inst not in self.positions:
             return 0.0
 
@@ -173,7 +175,7 @@ class User:
         qty = self.positions[inst]
         return abs(qty) * ob.last_price
     
-    def get_total_exposure(self):
+    def get_total_exposure(self) -> float:
         total = 0.0
 
         for inst in self.positions:
@@ -181,7 +183,7 @@ class User:
         
         return total
     
-    def get_remaining_quota(self, instrument):
+    def get_remaining_quota(self, instrument: str) -> dict:
         """
         Returns how much more the user can buy or sell for a given instrument
         without breaching the position limit.
@@ -205,8 +207,8 @@ class User:
             "sell_quota": max(0, sell_quota)
         }
     
-    def get_outstanding_buys(self):
+    def get_outstanding_buys(self) -> dict:
         return self.outstanding_buys
     
-    def get_outstanding_sells(self):
+    def get_outstanding_sells(self) -> dict:
         return self.outstanding_sells

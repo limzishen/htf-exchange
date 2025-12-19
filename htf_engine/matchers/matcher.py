@@ -1,19 +1,18 @@
 import heapq
-
 class Matcher:
 
     """Base class for all matchers."""
 
-    def match(self, order_book, order):
+    def match(self, order_book, order) -> None:
         raise NotImplementedError
     
     def _execute_match(
         self,
         order_book,
-        order, 
+        order,
         price_cmp=lambda best_price: True, 
         place_leftover_fn=None
-    ):
+    ) -> None:
         """
         Core matching loop:
         - price_cmp: function to decide if a resting price can be traded
@@ -76,7 +75,7 @@ class Matcher:
         if order.qty > 0 and place_leftover_fn:
             place_leftover_fn(order_book, order)
 
-    def _would_self_trade(self, order_book, incoming_order, price_cmp):
+    def _would_self_trade(self, order_book, incoming_order, price_cmp) -> bool:
         if not order_book.enable_stp:
             return False
         
