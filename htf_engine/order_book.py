@@ -9,12 +9,13 @@ from .orders.fok_order import FOKOrder
 from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
+from .orders.order import Order
 from .trades.trade_log import TradeLog
 from datetime import datetime, timezone
 import uuid
 
 class OrderBook:
-    def __init__(self, instrument, enable_stp=True):
+    def __init__(self, instrument:str, enable_stp:bool =True):
         self.instrument = instrument
 
         self.bids = defaultdict(deque)
@@ -39,7 +40,7 @@ class OrderBook:
 
         self.enable_stp = enable_stp
 
-    def add_order(self, order_type, side, qty, price=None, user_id=None):
+    def add_order(self, order_type:str, side:str, qty:int, price:float=None, user_id:str=None) -> str:
         order_count = next(self.order_counter)
         timestamp = datetime.now(timezone.utc)
         data_string = (
@@ -68,10 +69,10 @@ class OrderBook:
 
         return order_uuid
 
-    def modify_order(self, order_id, new_qty, new_price):
+    def modify_order(self, order_id:str, new_qty:int, new_price:int) -> str:
         if order_id not in self.order_map:
             print("Order not found!!")
-            return False
+            return "False"
 
         curr_order = self.order_map[order_id]
         if curr_order.price != new_price or new_qty > curr_order.qty:
@@ -88,7 +89,7 @@ class OrderBook:
 
 
 
-    def clean_orders(self, order_heap, queue_dict):
+    def clean_orders(self, order_heap:list, queue_dict:dict) -> None:
         while order_heap and order_heap[0][2] in self.cancelled_orders:
             if queue_dict == self.bids:
                 order_price, timestamp, oid_to_clean = -order_heap[0][0], order_heap[0][1], order_heap[0][2]
@@ -103,25 +104,25 @@ class OrderBook:
             print(f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap")
 
 
-    def best_bid(self):
+    def best_bid(self) -> float:
         self.clean_orders(self.best_bids, self.bids)
         return -self.best_bids[0][0] if self.best_bids else None
 
-    def best_ask(self):
+    def best_ask(self) -> float:
         self.clean_orders(self.best_asks, self.asks)
         return self.best_asks[0][0] if self.best_asks else None
 
-    def get_all_pending_orders(self):
+    def get_all_pending_orders(self) -> list:
         return [str(v) for v in self.order_map.values() if v.order_id not in self.cancelled_orders]
 
-    def cancel_order(self, order_id):
+    def cancel_order(self, order_id: str) -> bool:
         if order_id in self.order_map:
             self.cancelled_orders.add(order_id)
             return True
         print("Order not found!!")
         return False
 
-    def record_trade(self, price, qty, buy_order, sell_order, aggressor):
+    def record_trade(self, price: float, qty: int, buy_order: Order, sell_order: Order, aggressor: str) -> TradeLog:
         trade = self.trade_log.record(
             price=price,
             qty=qty,
@@ -137,7 +138,7 @@ class OrderBook:
         
         return trade
 
-    def cleanup_discarded_order(self, order):
+    def cleanup_discarded_order(self, order: Order) -> None:
         if self.cleanup_discarded_order_callback:
             self.cleanup_discarded_order_callback(order)
     
@@ -176,7 +177,7 @@ class OrderBook:
 
         return "\n".join(rows)
 
-    def _snapshot_side(self, side_levels):
+    def _snapshot_side(self, side_levels: defaultdict[int, deque]) -> tuple:
         """
         Representation of one side (bids or asks).
         Ignores empty price levels.
@@ -203,7 +204,7 @@ class OrderBook:
             snap.append((price, tuple(orders)))
         return tuple(snap)
 
-    def snapshot(self):
+    def snapshot(self) -> dict:
         """
         Snapshot used for equality / tests.
         Does NOT rely on heap internal ordering.

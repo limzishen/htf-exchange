@@ -48,7 +48,7 @@ class TestModifyOrder:
 
     def test_invalid_order(self, ob):
         """Invalid order."""
-        assert ob.modify_order("false", 10, 100) == False
+        assert ob.modify_order("false", 10, 100) == "False"
 
 
 

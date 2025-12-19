@@ -6,17 +6,17 @@ class TradeLog:
     VALID_AGGRESSORS = {"buy", "sell"}
 
     def __init__(self):
-        self.trades = []
+        self._trades = []
 
     def record(
         self,
-        price,
-        qty,
-        buy_user_id,
-        sell_user_id,
-        buy_order_id,
-        sell_order_id,
-        aggressor
+        price: float,
+        qty: int,
+        buy_user_id: str,
+        sell_user_id: str,
+        buy_order_id: str,
+        sell_order_id: str,
+        aggressor: str
     ):
         if aggressor not in self.VALID_AGGRESSORS:
             raise ValueError(f"Invalid aggressor: {aggressor}")
@@ -31,11 +31,11 @@ class TradeLog:
             sell_order_id=sell_order_id,
             aggressor=aggressor,
         )
-        self.trades.append(trade)
+        self._trades.append(trade)
         return trade
 
-    def retrieve_log(self):
-        return list(self.trades)        # defensive copy
+    def retrieve_log(self) -> tuple:
+        return tuple(self._trades)        # defensive copy
     
-    def retrieve_simple_log(self):
-        return list(map(str, self.trades))
+    def retrieve_simple_log(self) -> tuple:
+        return tuple(map(str, self._trades))

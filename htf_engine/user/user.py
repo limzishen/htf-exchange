@@ -1,8 +1,11 @@
 from collections import defaultdict
 from htf_engine.user.user_log import UserLog
 
+from htf_engine.trades.trade import Trade
+
+
 class User:
-    def __init__(self, user_id, username, cash_balance=0.0):
+    def __init__(self, user_id: str, username: str, cash_balance: float=0.0):
         self.user_id = user_id
         self.username = username
         self.cash_balance = cash_balance            # TODO... can ignore for now
@@ -14,45 +17,45 @@ class User:
         self.outstanding_sells = defaultdict(int)    # instrument -> qty
 
         self.user_log = UserLog()
-        
+
         self.exchange = None  # injected later
 
-    def cash_in(self, amount):
-        self.cash_balance += amount
+    def cash_in(self, amount: float) -> None:
+        self._increase_cash_balance(amount)
 
     def register(self):
         self.user_log.record_register_user(self.user_id, self.username, self.cash_balance)
 
-    def cash_out(self, amount):
+    def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
             raise ValueError("Insufficient balance")
-        self.cash_balance -= amount
+        self._decrease_cash_balance(amount)
     
-    def can_place_order(self, instrument, side, qty):
+    def _can_place_order(self, instrument: str, side: str, qty: int) -> bool:
         quota = self.get_remaining_quota(instrument)
         
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 
-    def place_order(self, exchange, instrument, order_type, side, qty, price=None):
+    def place_order(self, exchange: str, instrument: str, order_type: str, side: str, qty: int, price: float=None) -> str:
         """Place order via exchange; exchange returns order id."""
         
         # --- CHECK LIMIT ---
-        if not self.can_place_order(instrument, side, qty):
+        if not self._can_place_order(instrument, side, qty):
             raise ValueError(f"User {self.user_id} cannot place order: would exceed position limit")
         
         # --- UPDATE OUTSTANDING ---
         if side == "buy":
-            self.outstanding_buys[instrument] += qty
+            self.increase_outstanding_buys(instrument, qty)
         else:
-            self.outstanding_sells[instrument] += qty
+            self.increase_outstanding_sells(instrument, qty)
 
         # Place order through exchange
         order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
         self.user_log.record_place_order(self.user_id, self.username, instrument, order_type, side, qty, price)
         return order_id
 
-    def cancel_order(self, order_id, instrument=None):
+    def cancel_order(self, order_id: str, instrument: str=None) -> bool:
         if self.exchange is None:
             raise ValueError("User is not registered with any exchange.")
         
@@ -68,7 +71,7 @@ class User:
         print("Order ID not found!")
         return False
 
-    def update_positions(self, trade, instrument):
+    def update_positions_and_cash_balance(self, trade: Trade, instrument: str, exchange_fee: int) -> None:
         qty = trade.qty
         price = trade.price
 
@@ -77,9 +80,7 @@ class User:
 
         # BUY
         if trade.buy_user_id == self.user_id:
-            self.outstanding_buys[instrument] -= qty
-            if self.outstanding_buys[instrument] == 0:
-                self.outstanding_buys.pop(instrument)
+            self.reduce_outstanding_buys(instrument, qty)
 
             if old_qty >= 0:
                 # increasing long OR opening long
@@ -92,13 +93,13 @@ class User:
                 new_qty = old_qty + qty
                 new_avg = old_avg if new_qty < 0 else price
 
-            self.cash_balance -= qty * price
+            cash_delta = qty * price
+            self._decrease_cash_balance(cash_delta)
+            self._decrease_cash_balance(exchange_fee)
 
         # SELL
         elif trade.sell_user_id == self.user_id:
-            self.outstanding_sells[instrument] -= qty
-            if self.outstanding_sells[instrument] == 0:
-                self.outstanding_sells.pop(instrument)
+            self.reduce_outstanding_sells(instrument, qty)
 
             if old_qty <= 0:
                 # increasing short OR opening short
@@ -111,7 +112,9 @@ class User:
                 new_qty = old_qty - qty
                 new_avg = old_avg if new_qty > 0 else price
 
-            self.cash_balance += qty * price
+            cash_delta = qty * price
+            self._increase_cash_balance(cash_delta)
+            self._decrease_cash_balance(exchange_fee)
 
         # Cleanup
         if new_qty == 0:
@@ -121,10 +124,7 @@ class User:
             self.positions[instrument] = new_qty
             self.average_cost[instrument] = new_avg
 
-
-    # Getters
-        
-    def get_positions(self):
+    def get_positions(self) -> dict:
         """
         Returns:
         {
@@ -142,16 +142,21 @@ class User:
             for inst, qty in self.positions.items()
         }
 
-    def get_cash_balance(self):
+    def _increase_cash_balance(self, amount: int) -> None:
+        self.cash_balance += amount
+
+    def _decrease_cash_balance(self, amount: int) -> None:
+        self.cash_balance -= amount
+
+    def get_cash_balance(self) -> float:
         return self.cash_balance
     
-    def get_realised_pnl(self):
+    def get_realised_pnl(self) -> float:
         return self.realised_pnl
     
-    def get_unrealised_pnl_for_instrument(self, inst):
+    def get_unrealised_pnl_for_instrument(self, inst) -> float:
         if inst not in self.positions:
-            print(f"User {self.user_id} does not have a position for instrument {inst}!")
-            return None
+            raise ValueError(f"User {self.user_id} has no position in {inst}")
 
         ob = self.exchange.order_books.get(inst)
         if ob is None or ob.last_price is None:
@@ -162,7 +167,7 @@ class User:
 
         return qty * (ob.last_price - avg)
     
-    def get_unrealised_pnl(self):
+    def get_unrealised_pnl(self) -> float:
         total = 0.0
 
         for inst in self.positions:
@@ -170,7 +175,7 @@ class User:
 
         return total
     
-    def get_exposure_for_instrument(self, inst):
+    def get_exposure_for_instrument(self, inst) -> float:
         if inst not in self.positions:
             return 0.0
 
@@ -181,7 +186,7 @@ class User:
         qty = self.positions[inst]
         return abs(qty) * ob.last_price
     
-    def get_total_exposure(self):
+    def get_total_exposure(self) -> float:
         total = 0.0
 
         for inst in self.positions:
@@ -189,7 +194,7 @@ class User:
         
         return total
     
-    def get_remaining_quota(self, instrument):
+    def get_remaining_quota(self, instrument: str) -> dict:
         """
         Returns how much more the user can buy or sell for a given instrument
         without breaching the position limit.
@@ -213,8 +218,26 @@ class User:
             "sell_quota": max(0, sell_quota)
         }
     
-    def get_outstanding_buys(self):
+    def increase_outstanding_buys(self, instrument, qty):
+        self.outstanding_buys[instrument] += qty
+
+    def increase_outstanding_sells(self, instrument, qty):
+        self.outstanding_sells[instrument] += qty
+
+    def reduce_outstanding_buys(self, instrument, qty):
+        self.outstanding_buys[instrument] -= qty
+
+        if self.outstanding_buys[instrument] == 0:
+            self.outstanding_buys.pop(instrument)
+
+    def reduce_outstanding_sells(self, instrument, qty):
+        self.outstanding_sells[instrument] -= qty
+
+        if self.outstanding_sells[instrument] == 0:
+            self.outstanding_sells.pop(instrument)
+
+    def get_outstanding_buys(self) -> dict:
         return self.outstanding_buys
     
-    def get_outstanding_sells(self):
+    def get_outstanding_sells(self) -> dict:
         return self.outstanding_sells
