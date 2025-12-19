@@ -40,9 +40,9 @@ class Exchange:
         
         # Remove from user's outstanding
         if order.side == "buy":
-            user.outstanding_buys[instrument] -= order.qty
+            user.reduce_outstanding_buys(instrument, order.qty)
         else:
-            user.outstanding_sells[instrument] -= order.qty
+            user.reduce_outstanding_sells(instrument, order.qty)
         
         # Cancel in order book
         return ob.cancel_order(order_id)
@@ -58,7 +58,7 @@ class Exchange:
     
     def cleanup_discarded_order(self, order: Order, instrument: str) -> None:
         user = self.users.get(order.user_id)
-        
+
         if order.is_buy_order():
             user.reduce_outstanding_buys(instrument, order.qty)
         else:
