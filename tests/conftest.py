@@ -9,7 +9,7 @@ def ob():
 
 @pytest.fixture
 def exchange():
-    e = Exchange()
+    e = Exchange(fee=10)
     e.add_order_book("Stock A", OrderBook("Stock A"))
     e.add_order_book("Stock B", OrderBook("Stock B"))
     e.add_order_book("Stock C", OrderBook("Stock C"))

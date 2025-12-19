@@ -63,7 +63,7 @@ class User:
         print("Order ID not found!")
         return False
 
-    def update_positions(self, trade: Trade, instrument: str) -> None:
+    def update_positions_and_cash_balance(self, trade: Trade, instrument: str, exchange_fee: int) -> None:
         qty = trade.qty
         price = trade.price
 
@@ -85,7 +85,9 @@ class User:
                 new_qty = old_qty + qty
                 new_avg = old_avg if new_qty < 0 else price
 
-            self.cash_balance -= qty * price
+            cash_delta = qty * price
+            self.decrease_cash_balance(cash_delta)
+            self.decrease_cash_balance(exchange_fee)
 
         # SELL
         elif trade.sell_user_id == self.user_id:
@@ -102,7 +104,9 @@ class User:
                 new_qty = old_qty - qty
                 new_avg = old_avg if new_qty > 0 else price
 
-            self.cash_balance += qty * price
+            cash_delta = qty * price
+            self.increase_cash_balance(cash_delta)
+            self.decrease_cash_balance(exchange_fee)
 
         # Cleanup
         if new_qty == 0:

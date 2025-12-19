@@ -5,9 +5,11 @@ from .user import User
 
 
 class Exchange:
-    def __init__(self):
+    def __init__(self, fee=0):
         self.users = {}          # user_id -> User
         self.order_books = {}    # instrument -> OrderBook
+        self.fee = fee
+        self.balance = 0
 
     def register_user(self, user: User) -> None:
         self.users[user.user_id] = user
@@ -52,9 +54,11 @@ class Exchange:
         buy_user = self.users.get(trade.buy_user_id)
         sell_user = self.users.get(trade.sell_user_id)
         if buy_user:
-            buy_user.update_positions(trade, instrument)
+            buy_user.update_positions_and_cash_balance(trade, instrument, self.fee)
+            self._earn_fee()
         if sell_user:
-            sell_user.update_positions(trade, instrument)
+            sell_user.update_positions_and_cash_balance(trade, instrument, self.fee)
+            self._earn_fee()
     
     def cleanup_discarded_order(self, order: Order, instrument: str) -> None:
         user = self.users.get(order.user_id)
@@ -63,4 +67,6 @@ class Exchange:
             user.reduce_outstanding_buys(instrument, order.qty)
         else:
             user.reduce_outstanding_sells(instrument, order.qty)
-
+    
+    def _earn_fee(self) -> None:
+        self.balance += self.fee
