@@ -56,16 +56,11 @@ class Exchange:
         if sell_user:
             sell_user.update_positions(trade, instrument)
     
-    def cleanup_discarded_order(self, order: Order, instrument:str) -> None:
+    def cleanup_discarded_order(self, order: Order, instrument: str) -> None:
         user = self.users.get(order.user_id)
+        
         if order.is_buy_order():
-            outstanding_buys = user.get_outstanding_buys()
-            outstanding_buys[instrument] -= order.qty
-            if outstanding_buys[instrument] == 0:
-                outstanding_buys.pop(instrument)
+            user.reduce_outstanding_buys(instrument, order.qty)
         else:
-            outstanding_sells = user.get_outstanding_sells()
-            outstanding_sells[instrument] -= order.qty
-            if outstanding_sells[instrument] == 0:
-                outstanding_sells.pop(instrument)
+            user.reduce_outstanding_sells(instrument, order.qty)
 

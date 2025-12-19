@@ -40,9 +40,9 @@ class User:
         
         # --- UPDATE OUTSTANDING ---
         if side == "buy":
-            self.outstanding_buys[instrument] += qty
+            self.increasing_outstanding_buys(instrument, qty)
         else:
-            self.outstanding_sells[instrument] += qty
+            self.increasing_outstanding_sells(instrument, qty)
 
         # Place order through exchange
         order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
@@ -72,9 +72,7 @@ class User:
 
         # BUY
         if trade.buy_user_id == self.user_id:
-            self.outstanding_buys[instrument] -= qty
-            if self.outstanding_buys[instrument] == 0:
-                self.outstanding_buys.pop(instrument)
+            self.reduce_outstanding_buys(instrument, qty)
 
             if old_qty >= 0:
                 # increasing long OR opening long
@@ -91,9 +89,7 @@ class User:
 
         # SELL
         elif trade.sell_user_id == self.user_id:
-            self.outstanding_sells[instrument] -= qty
-            if self.outstanding_sells[instrument] == 0:
-                self.outstanding_sells.pop(instrument)
+            self.reduce_outstanding_sells(instrument, qty)
 
             if old_qty <= 0:
                 # increasing short OR opening short
@@ -116,9 +112,6 @@ class User:
             self.positions[instrument] = new_qty
             self.average_cost[instrument] = new_avg
 
-
-    # Getters
-        
     def get_positions(self) -> dict:
         """
         Returns:
@@ -206,6 +199,24 @@ class User:
             "buy_quota": max(0, buy_quota),
             "sell_quota": max(0, sell_quota)
         }
+    
+    def increasing_outstanding_buys(self, instrument, qty):
+        self.outstanding_buys[instrument] += qty
+
+    def increasing_outstanding_sells(self, instrument, qty):
+        self.outstanding_sells[instrument] += qty
+
+    def reduce_outstanding_buys(self, instrument, qty):
+        self.outstanding_buys[instrument] -= qty
+        
+        if self.outstanding_buys[instrument] == 0:
+            self.outstanding_buys.pop(instrument)
+    
+    def reduce_outstanding_sells(self, instrument, qty):
+        self.outstanding_sells[instrument] -= qty
+        
+        if self.outstanding_sells[instrument] == 0:
+            self.outstanding_sells.pop(instrument)
     
     def get_outstanding_buys(self) -> dict:
         return self.outstanding_buys

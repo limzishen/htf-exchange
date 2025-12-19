@@ -1,5 +1,6 @@
 import os
 import sys
+import pprint
 
 # allow importing htf-engine
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -64,7 +65,7 @@ def place_order():
 
     user_id = data["user_id"]
     instrument = data["instrument"]
-    order_type = data["order_type"]   # 🔥 REQUIRED
+    order_type = data["order_type"]
     side = data["side"]               # buy / sell
     qty = int(data["qty"])
     price = data.get("price")
