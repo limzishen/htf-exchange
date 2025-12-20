@@ -1,4 +1,5 @@
 from collections import defaultdict
+from htf_engine.user.user_log import UserLog
 
 from htf_engine.trades.trade import Trade
 
@@ -14,7 +15,9 @@ class User:
         self.average_cost = {}                      # instrument -> avg cost
         self.outstanding_buys = defaultdict(int)     # instrument -> qty
         self.outstanding_sells = defaultdict(int)    # instrument -> qty
-        
+
+        self.user_log = UserLog(user_id, username)
+
         self.exchange = None  # injected later
 
         self.place_order_callback = None
@@ -22,13 +25,18 @@ class User:
 
     def cash_in(self, amount: float) -> None:
         self._increase_cash_balance(amount)
+        self.user_log.record_cash_in(amount, self.cash_balance)
+
+    def register(self):
+        self.user_log.record_register_user(self.cash_balance)
 
     def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
             raise ValueError("Insufficient balance")
         self._decrease_cash_balance(amount)
+        self.user_log.record_cash_out(amount, self.cash_balance)
     
-    def _can_place_order(self, instrument: str, side: str, qty: int) -> bool:
+    def _can_place_order(self, instrument: str, side: str, qty: int) -> int:
         quota = self.get_remaining_quota(instrument)
         
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
@@ -47,11 +55,13 @@ class User:
 
         # Place order
         order_id = self.place_order_callback(self.user_id, instrument, order_type, side, qty, price)
+        self.user_log.record_place_order(instrument, order_type, side, qty, price)
         return order_id
 
     def cancel_order(self, order_id: str, instrument: str) -> bool:
         try:
             self.cancel_order_callback(self.user_id, instrument, order_id)
+            self.user_log.record_cancel_order(order_id, instrument)
             return True
         except ValueError as e:
             return False
@@ -129,7 +139,7 @@ class User:
 
     def _increase_cash_balance(self, amount: int) -> None:
         self.cash_balance += amount
-    
+
     def _decrease_cash_balance(self, amount: int) -> None:
         self.cash_balance -= amount
 
@@ -211,16 +221,16 @@ class User:
 
     def reduce_outstanding_buys(self, instrument, qty):
         self.outstanding_buys[instrument] -= qty
-        
+
         if self.outstanding_buys[instrument] == 0:
             self.outstanding_buys.pop(instrument)
-    
+
     def reduce_outstanding_sells(self, instrument, qty):
         self.outstanding_sells[instrument] -= qty
-        
+
         if self.outstanding_sells[instrument] == 0:
             self.outstanding_sells.pop(instrument)
-    
+
     def get_outstanding_buys(self) -> dict:
         return self.outstanding_buys
     

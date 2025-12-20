@@ -1,7 +1,7 @@
 import pytest
 from htf_engine.exchange import Exchange
 from htf_engine.order_book import OrderBook
-from htf_engine.user import User
+from htf_engine.user.user import User
 
 @pytest.fixture
 def ob():

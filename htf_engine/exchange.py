@@ -1,7 +1,7 @@
 from .order_book import OrderBook
+from .user.user import User
 from .orders.order import Order
 from .trades.trade import Trade
-from .user import User
 
 
 class Exchange:
@@ -11,11 +11,16 @@ class Exchange:
         self.fee = fee
         self.balance = 0
 
-    def register_user(self, user: User) -> None:
+    def register_user(self, user: User) -> bool:
+        if user.user_id in self.users:
+            return False
+
         self.users[user.user_id] = user
+        user.register()
         user.exchange = self
         user.place_order_callback = self.place_order
         user.cancel_order_callback = self.cancel_order
+        return True
 
     def add_order_book(self, instrument: str, ob: OrderBook) -> None:
         self.order_books[instrument] = ob
@@ -75,7 +80,7 @@ class Exchange:
             user.reduce_outstanding_buys(instrument, order.qty)
         else:
             user.reduce_outstanding_sells(instrument, order.qty)
-    
+
     def _earn_fee(self) -> None:
         self.balance += self.fee
     
