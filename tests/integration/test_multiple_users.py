@@ -196,8 +196,8 @@ class TestExchange:
         assert u2.get_outstanding_sells() == {}
         assert u2.get_remaining_quota("Stock A") == { "buy_quota": 150, "sell_quota": 50 }
 
-        # User 3 wants to buy 25 Stock A at $20, matching User 1's limit sell order
-        u3.place_order("Stock A", "limit", "buy", 25, 20)
+        # User 3 wants to FOK buy 25 Stock A at $20, matching User 1's limit sell order
+        u3.place_order("Stock A", "fok", "buy", 25, 20)
         
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -468,14 +468,55 @@ class TestExchange:
         assert u3.get_outstanding_sells() == { "Stock A": 30 }
         assert u3.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 120 }
 
-        # User 2 wants to limit buy another 50 Stock A at $120, matching User 3's limit sell order at $100 (but only 30 shares are transacted)
-        u2.place_order("Stock A", "limit", "buy", 50, 120)
+        # User 2 tries to FOK buy another 50 Stock A at $101 (but it is rejected, as there are only 30 shares of ask liquidity <= $101)
+        with pytest.raises(ValueError, match=f"Insufficient Liquidity for FOK order: cancelling order .* from User {u2.user_id}"):  
+            u2.place_order("Stock A", "fok", "buy", 50, 101)
+        
+        bids, asks, last_price = self._nice_snapshot(ob)
+        assert bids[10] == 0
+        assert bids[20] == 0
+        assert bids[100] == 0
+        assert asks[10] == 0
+        assert asks[20] == 0
+        assert asks[100] == 30
+        assert last_price == 20     
+        assert exchange.balance == 100                
+
+        assert u1.positions == {}                   
+        assert u1.get_realised_pnl() == 500         
+        assert u1.get_unrealised_pnl() == 0         
+        assert u1.get_total_exposure() == 0
+        assert u1.get_cash_balance() == 5450
+        assert u1.get_outstanding_buys() == {}
+        assert u1.get_outstanding_sells() == {}        
+        assert u1.get_remaining_quota("Stock A") == { "buy_quota": 100, "sell_quota": 100 }
+
+        assert u2.positions == { "Stock A": -50 }
+        assert u2.get_realised_pnl() == 0             
+        assert u2.get_unrealised_pnl() == -500      
+        assert u2.get_total_exposure() == 1000   
+        assert u2.get_cash_balance() == 5490  
+        assert u2.get_outstanding_buys() == {}
+        assert u2.get_outstanding_sells() == {}
+        assert u2.get_remaining_quota("Stock A") == { "buy_quota": 150, "sell_quota": 50 }
+
+        assert u3.positions == { "Stock A": 50 }
+        assert u3.get_realised_pnl() == 0
+        assert u3.get_unrealised_pnl() == 0         
+        assert u3.get_total_exposure() == 1000     
+        assert u3.get_cash_balance() == 3960
+        assert u3.get_outstanding_buys() == {}
+        assert u3.get_outstanding_sells() == { "Stock A": 30 }
+        assert u3.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 120 }
+
+        # User 2 wants to IOC buy another 50 Stock A at $120, matching User 3's limit sell order at $100 (but only 30 shares are transacted)
+        u2.place_order("Stock A", "ioc", "buy", 50, 120)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert bids[100] == 0
-        assert bids[120] == 20
+        assert bids[120] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert asks[100] == 0
@@ -497,9 +538,9 @@ class TestExchange:
         assert u2.get_unrealised_pnl() == -1800     # User 2 is still short -20 shares with cost basis of $10 (current price = $100)
         assert u2.get_total_exposure() == 2000     
         assert u2.get_cash_balance() == 2480
-        assert u2.get_outstanding_buys() == { "Stock A": 20 }
+        assert u2.get_outstanding_buys() == {}
         assert u2.get_outstanding_sells() == {}
-        assert u2.get_remaining_quota("Stock A") == { "buy_quota": 100, "sell_quota": 80 }
+        assert u2.get_remaining_quota("Stock A") == { "buy_quota": 120, "sell_quota": 80 }
 
         assert u3.positions == { "Stock A": 20 }
         assert u3.get_realised_pnl() == 2400        # User 3 sold 30 shares at $100 each, earning $80 profit per share   
