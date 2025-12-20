@@ -20,6 +20,7 @@ class Exchange:
         user.exchange = self
         user.place_order_callback = self.place_order
         user.cancel_order_callback = self.cancel_order
+        user.modify_order_callback = self.modify_order
         return True
 
     def add_order_book(self, instrument: str, ob: OrderBook) -> None:
@@ -38,6 +39,30 @@ class Exchange:
         order_id = ob.add_order(order_type, side, qty, price, user_id=user_id)
         return order_id
 
+    def modify_order(self, user_id: str, instrument: str, order_id: str, new_qty: int, new_price: float) -> bool: 
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        if instrument not in self.order_books: 
+            raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
+        
+        ob = self.order_books[instrument]
+        if order_id not in ob.order_map:
+            print("Order not found in order book!")
+            return False
+
+        prev_order = ob.order_map[order_id]
+        qty_change = new_qty - prev_order.qty
+        ob.modify_order(order_id, new_qty,new_price)
+        
+        if qty_change > 0:
+            self.users[user_id].increase_outstanding_buys(instrument, qty_change)
+
+        if qty_change < 0:
+            self.users[user_id].reduce_outstanding_buys(instrument, -qty_change)
+        
+        return True
+    
     def cancel_order(self, user_id: str, instrument: str, order_id: str) -> bool:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")

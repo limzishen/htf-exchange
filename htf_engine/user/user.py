@@ -22,6 +22,8 @@ class User:
 
         self.place_order_callback = None
         self.cancel_order_callback = None
+        self.modify_order_callback = None
+
 
     def cash_in(self, amount: float) -> None:
         self._increase_cash_balance(amount)
@@ -61,6 +63,14 @@ class User:
         try:
             self.cancel_order_callback(self.user_id, instrument, order_id)
             self.user_log.record_cancel_order(order_id, instrument)
+            return True
+        except ValueError as e:
+            return False
+    
+    def modify_order(self, instrument_id: str, order_id: str, new_qty: int, new_price: float) -> bool:
+        try:
+            self.modify_order_callback(self.user_id, instrument_id, order_id, new_qty, new_price)
+            self.user_log.record_modify_order(order_id, instrument_id, new_qty, self.cash_balance)
             return True
         except ValueError as e:
             return False
