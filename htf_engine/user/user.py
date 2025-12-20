@@ -36,9 +36,8 @@ class User:
         self._decrease_cash_balance(amount)
         self.user_log.record_cash_out(amount, self.cash_balance)
     
-    def _can_place_order(self, instrument: str, side: str, qty: int) -> int:
+    def _can_place_order(self, instrument: str, side: str, qty: int) -> bool:
         quota = self.get_remaining_quota(instrument)
-        
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 

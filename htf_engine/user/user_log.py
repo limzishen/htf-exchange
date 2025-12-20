@@ -81,6 +81,6 @@ class UserLog:
     def retrieve_simple_log(self) -> tuple:
         return tuple(map(str, self._actions))
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Prints user actions"""
         return "\n".join(str(action) for action in self._actions)
