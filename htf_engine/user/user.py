@@ -38,9 +38,8 @@ class User:
         self._decrease_cash_balance(amount)
         self.user_log.record_cash_out(amount, self.cash_balance)
     
-    def _can_place_order(self, instrument: str, side: str, qty: int) -> int:
+    def _can_place_order(self, instrument: str, side: str, qty: int) -> bool:
         quota = self.get_remaining_quota(instrument)
-        
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 
@@ -68,10 +67,10 @@ class User:
         except ValueError as e:
             return False
     
-    def modify_order(self, order_id: str, new_qty: int, new_price: float) -> bool:
+    def modify_order(self, instrument_id: str, order_id: str, new_qty: int, new_price: float) -> bool:
         try:
-            self.modify_order_callback(self.user_id, self.instrument, order_id, new_qty, new_price)
-            self.user_log.record_modify_order(new_qty, self.cash_balance)
+            self.modify_order_callback(self.user_id, instrument_id, order_id, new_qty, new_price)
+            self.user_log.record_modify_order(order_id, instrument_id, new_qty, self.cash_balance)
             return True
         except ValueError as e:
             return False

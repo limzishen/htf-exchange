@@ -8,7 +8,7 @@ def test_record_register_user(exchange, u1):
 
 def test_record_place_order(exchange, u1): 
     exchange.register_user(u1)
-    u1.place_order(exchange, "Stock A", "limit", "buy", 10, 10)
+    u1.place_order("Stock A", "limit", "buy", 10, 10)
     assert u1.user_log._actions[0].action == "REGISTER"
     assert u1.user_log._actions[1].action == "PLACE ORDER"
     assert u1.user_log._actions[1].username == u1.username
@@ -38,7 +38,7 @@ def test_record_cash_out(u1):
 
 def test_record_cancel_order(exchange, u1): 
     exchange.register_user(u1)
-    oid = u1.place_order(exchange, "Stock A", "limit", "buy", 10, 10)
+    oid = u1.place_order("Stock A", "limit", "buy", 10, 10)
     u1.cancel_order(oid, "Stock A")
     print(u1.user_log)
 

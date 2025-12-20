@@ -53,13 +53,14 @@ class Exchange:
 
         prev_order = ob.order_map[order_id]
         qty_change = new_qty - prev_order.qty
+        print(qty_change)
         ob.modify_order(order_id, new_qty,new_price)
         
         if qty_change > 0:
             self.users[user_id].increase_outstanding_buys(instrument, qty_change)
 
         if qty_change < 0:
-            self.users[user_id].reduce_outstanding_sells(instrument, -qty_change)
+            self.users[user_id].reduce_outstanding_buys(instrument, -qty_change)
         
         return True
     

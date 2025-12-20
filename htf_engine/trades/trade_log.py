@@ -40,5 +40,5 @@ class TradeLog:
     def retrieve_simple_log(self) -> tuple:
         return tuple(map(str, self._trades))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(str(trade) for trade in self._trades)

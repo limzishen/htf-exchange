@@ -7,6 +7,7 @@ from htf_engine.user.action_log.cash_in_action import CashInAction
 from htf_engine.user.action_log.cash_out_action import CashOutAction
 from htf_engine.user.action_log.cancel_order_action import CancelOrderAction
 from htf_engine.user.action_log.place_order_action import PlaceOrderAction
+from htf_engine.user.action_log.modify_order_action import ModifyOrderAction
 
 class UserLog:
     def __init__(self, user_id, username):
@@ -74,6 +75,19 @@ class UserLog:
             instrument_id=instrument_id
         )
         self._actions.append(action)
+    
+    def record_modify_order(self, order_id: str, instrument_id: str, new_qty: int, new_price: float):
+        action = ModifyOrderAction(
+            timestamp=self._get_now(),
+            user_id=self.user_id,
+            username=self.username,
+            action="MODIFY ORDER",
+            order_id=order_id,
+            instrument_id=instrument_id,
+            new_qty=new_qty,
+            new_price=new_price
+        )
+        self._actions.append(action)
 
     def retrieve_log(self) -> tuple:
         return tuple(self._actions)
@@ -81,6 +95,6 @@ class UserLog:
     def retrieve_simple_log(self) -> tuple:
         return tuple(map(str, self._actions))
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Prints user actions"""
         return "\n".join(str(action) for action in self._actions)
