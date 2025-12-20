@@ -35,8 +35,6 @@ class User:
 
 
     def place_order(self, instrument: str, order_type: str, side: str, qty: int, price: float=None) -> str:
-        """Place order via exchange; exchange returns order id."""
-        
         # --- CHECK LIMIT ---
         if not self._can_place_order(instrument, side, qty):
             raise ValueError(f"User {self.user_id} cannot place order: would exceed position limit")
@@ -47,24 +45,16 @@ class User:
         else:
             self.increase_outstanding_sells(instrument, qty)
 
-        # Place order through exchange
+        # Place order
         order_id = self.place_order_callback(self.user_id, instrument, order_type, side, qty, price)
         return order_id
 
-    def cancel_order(self, order_id: str, instrument: str=None) -> bool:
-        if self.exchange is None:
-            raise ValueError("User is not registered with any exchange.")
-        
-        if instrument:
-            return self.cancel_order_callback(self.user_id, instrument, order_id)
-        
-        # If instrument not provided, search all order books
-        for inst, ob in self.exchange.order_books.items():
-            if order_id in ob.order_map:
-                return self.cancel_order_callback(self.user_id, inst, order_id)
-        
-        print("Order ID not found!")
-        return False
+    def cancel_order(self, order_id: str, instrument: str) -> bool:
+        try:
+            self.cancel_order_callback(self.user_id, instrument, order_id)
+            return True
+        except ValueError as e:
+            return False
 
     def update_positions_and_cash_balance(self, trade: Trade, instrument: str, exchange_fee: int) -> None:
         qty = trade.qty

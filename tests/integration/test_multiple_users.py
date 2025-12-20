@@ -128,7 +128,7 @@ class TestExchange:
         assert u1.get_remaining_quota("Stock A") == { "buy_quota": 0, "sell_quota": 0 }
         
         # User 1 cancels the second order
-        u1.cancel_order(id_user1_order2)
+        u1.cancel_order(id_user1_order2, "Stock A")
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -148,7 +148,7 @@ class TestExchange:
         assert u1.get_remaining_quota("Stock A") == { "buy_quota": 0, "sell_quota": 50 }
 
         # User 1 cancels the first order
-        u1.cancel_order(id_user1_order1)
+        u1.cancel_order(id_user1_order1, "Stock A")
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 50

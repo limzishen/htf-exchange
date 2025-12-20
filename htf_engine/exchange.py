@@ -23,6 +23,9 @@ class Exchange:
         ob.cleanup_discarded_order_callback = lambda order, ob=ob: self.cleanup_discarded_order(order, ob.instrument)
 
     def place_order(self, user_id: str, instrument:str, order_type:str, side:str, qty:int, price=None) -> str:
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
         if instrument not in self.order_books:
             raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
         
@@ -31,8 +34,11 @@ class Exchange:
         return order_id
 
     def cancel_order(self, user_id: str, instrument: str, order_id: str) -> bool:
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+            
         if instrument not in self.order_books:
-            raise ValueError(f"Instrument '{instrument}' does not exist.")
+            raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
         
         ob = self.order_books[instrument]
 
