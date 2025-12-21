@@ -1,0 +1,9 @@
+from .invalid_order_error import InvalidOrderError
+
+
+class PostOnlyViolationError(InvalidOrderError):
+    error_code = "POST_ONLY_VIOLATION"
+
+    def default_message(self) -> str:
+        return "Post-only order would take liquidity and was rejected."
+    

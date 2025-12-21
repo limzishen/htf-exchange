@@ -6,7 +6,13 @@ from htf_engine.trades.trade_log import TradeLog
 
 @pytest.fixture
 def ob():
-    return OrderBook("NVDA", enable_stp=False)
+    e = Exchange(fee=10)
+    o = OrderBook("NVDA", enable_stp=False)
+
+    e.add_order_book("NVDA", o)
+    e.register_user(User("TESTING: NO_USER_ID", "TESTING: NO_USER_ID", 5000))
+
+    return o
 
 @pytest.fixture
 def exchange():
