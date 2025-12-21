@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from .order_book import OrderBook
 from .user.user import User
@@ -7,7 +7,12 @@ from .trades.trade import Trade
 
 
 class Exchange:
-    def __init__(self, fee=0):
+    users: dict[str, User]
+    order_books: dict[str, OrderBook]
+    fee: float
+    balance: float
+
+    def __init__(self, fee: float = 0):
         self.users = {}          # user_id -> User
         self.order_books = {}    # instrument -> OrderBook
         self.fee = fee
@@ -89,7 +94,12 @@ class Exchange:
         
         return new_order_id
     
-    def cancel_order(self, user_id: str, instrument: str, order_id: str) -> bool:
+    def cancel_order(
+            self,
+            user_id: str, 
+            instrument: str, 
+            order_id: str
+    ) -> bool:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
             
@@ -113,7 +123,7 @@ class Exchange:
         # Cancel in order book
         return ob.cancel_order(order_id)
 
-    def process_trade(self, trade: Trade, instrument:str) -> None:
+    def process_trade(self, trade: Trade, instrument: str) -> None:
         """Called by order book whenever a trade occurs"""
         buy_user = self.users.get(trade.buy_user_id)
         sell_user = self.users.get(trade.sell_user_id)
@@ -125,7 +135,12 @@ class Exchange:
             self._earn_fee()
     
     def cleanup_discarded_order(self, order: Order, instrument: str) -> None:
-        user = self.users.get(order.user_id)
+        user_id = order.user_id
+
+        if user_id not in self.users:
+            raise ValueError(f"Fatal Error: User {user_id} not found in exchange")
+        
+        user = self.users[user_id]
 
         if order.is_buy_order():
             user.reduce_outstanding_buys(instrument, order.qty)
@@ -135,12 +150,12 @@ class Exchange:
     def _earn_fee(self) -> None:
         self.balance += self.fee
     
-    def change_fee(self, new_fee: int) -> None:
+    def change_fee(self, new_fee: float) -> None:
         self.fee = new_fee
     
     # Read Operations
         
-    def get_user_positions(self, user_id):
+    def get_user_positions(self, user_id: str) -> dict:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -149,7 +164,7 @@ class Exchange:
         user_positions = user.get_positions()
         return user_positions
 
-    def get_user_cash_balance(self, user_id):
+    def get_user_cash_balance(self, user_id: str) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -158,7 +173,7 @@ class Exchange:
         user_cash_balance = user.get_cash_balance()
         return user_cash_balance
 
-    def get_user_realised_pnl(self, user_id):
+    def get_user_realised_pnl(self, user_id: str) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -167,7 +182,11 @@ class Exchange:
         user_realised_pnl = user.get_realised_pnl()
         return user_realised_pnl
 
-    def get_user_unrealised_pnl_for_inst(self, user_id, inst):
+    def get_user_unrealised_pnl_for_inst(
+            self,
+            user_id: str,
+            inst: str
+    ) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -189,7 +208,7 @@ class Exchange:
         user_unrealised_pnl_for_inst = qty * (ob.last_price - avg)
         return user_unrealised_pnl_for_inst
 
-    def get_user_unrealised_pnl(self, user_id) -> float:
+    def get_user_unrealised_pnl(self, user_id: str) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
 
@@ -201,7 +220,7 @@ class Exchange:
 
         return total
     
-    def get_user_exposure_for_inst(self, user_id, inst):
+    def get_user_exposure_for_inst(self, user_id: str, inst: str) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -221,7 +240,7 @@ class Exchange:
 
         return abs(qty) * ob.last_price
     
-    def get_user_exposure(self, user_id):
+    def get_user_exposure(self, user_id: str) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
 
@@ -233,7 +252,11 @@ class Exchange:
         
         return total
     
-    def get_user_remaining_quota_for_inst(self, user_id: str, inst: str) -> dict:
+    def get_user_remaining_quota_for_inst(
+            self,
+            user_id: str,
+            inst: str
+    ) -> dict[str, int]:
         """
         Returns how much more the user can buy or sell for a given instrument
         without breaching the position limit.
@@ -252,7 +275,7 @@ class Exchange:
         user_remaining_quota_for_inst = user.get_remaining_quota(inst)
         return user_remaining_quota_for_inst
     
-    def get_L1_data(self, user_id, inst):
+    def get_L1_data(self, user_id: str, inst: str) -> dict[str, Any]:
         """
         Level 1 (Top-of-Book) market data.
 
@@ -299,10 +322,15 @@ class Exchange:
             "best_ask_qty": best_ask_qty,
             "last_price": ob.last_price,
             "last_qty": ob.last_quantity,
-            "timestamp": ob.last_time.isoformat() if ob.last_time else None,
+            "timestamp": ob.last_time if ob.last_time else None,
         }
 
-    def get_L2_data(self, user_id, inst, depth: int = 5):
+    def get_L2_data(
+            self,
+            user_id: str,
+            inst: str,
+            depth: int = 5
+        ) -> dict[str, Any]:
         """
         Level 2 (Market Depth) data.
 
@@ -335,40 +363,32 @@ class Exchange:
 
         ob = self.order_books[inst]
 
-        bids = []
-        asks = []
-
-        # Bids: highest price first
-        for price in sorted(ob.bids.keys(), reverse=True)[:depth]:
-            total_qty = sum(
-                o.qty for o in ob.bids[price]
-                if o.order_id not in ob.cancelled_orders
-            )
-            if total_qty > 0:
-                bids.append({
-                    "price": price,
-                    "quantity": total_qty
-                })
-
-        # Asks: lowest price first
-        for price in sorted(ob.asks.keys())[:depth]:
-            total_qty = sum(
-                o.qty for o in ob.asks[price]
-                if o.order_id not in ob.cancelled_orders
-            )
-            if total_qty > 0:
-                asks.append({
-                    "price": price,
-                    "quantity": total_qty
-                })
+        def serialize_side(side_dict, reverse=False):
+            levels = []
+            for price in sorted(side_dict.keys(), reverse=reverse)[:depth]:
+                total_qty = sum(
+                    o.qty for o in ob.bids[price]
+                    if o.order_id not in ob.cancelled_orders
+                )
+                if total_qty > 0:
+                    levels.append({
+                        "price": price,
+                        "quantity": total_qty
+                    })
+            return levels
 
         return {
             "instrument": inst,
-            "bids": bids,
-            "asks": asks,
+            "bids": serialize_side(ob.bids, reverse=True),
+            "asks": serialize_side(ob.asks, reverse=False),
         }
 
-    def get_L3_data(self, user_id, inst):
+    def get_L3_data(
+            self,
+            user_id: str,
+            inst: str,
+            depth: int = 5
+        ) -> dict[str, Any]:
         """
         Level 3 (Order-Level) market data.
 
@@ -427,7 +447,7 @@ class Exchange:
 
         def serialize_side(side_dict, reverse=False):
             levels = []
-            for price in sorted(side_dict.keys(), reverse=reverse):
+            for price in sorted(side_dict.keys(), reverse=reverse)[:depth]:
                 orders = []
                 for o in side_dict[price]:
                     if o.order_id in ob.cancelled_orders:
@@ -437,7 +457,7 @@ class Exchange:
                         "qty": o.qty,
                         "user_id": o.user_id,
                         "order_type": o.__class__.__name__,
-                        "timestamp": o.timestamp.isoformat(),
+                        "timestamp": o.timestamp,
                     })
                 if orders:
                     levels.append({

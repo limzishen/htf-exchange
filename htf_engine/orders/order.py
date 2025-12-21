@@ -1,7 +1,14 @@
 class Order:
     VALID_SIDES = {"buy", "sell"}
     
-    def __init__(self, order_id: str, side: str, qty: int, user_id: str, timestamp: str):
+    def __init__(
+            self,
+            order_id: str,
+            side: str,
+            qty: int,
+            user_id: str,
+            timestamp: str
+    ):
         if side not in self.VALID_SIDES:
             raise ValueError(f"Invalid order side '{side}'. Must be 'buy' or 'sell'.")
 

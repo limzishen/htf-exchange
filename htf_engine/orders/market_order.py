@@ -2,7 +2,14 @@ from .order import Order
 
 
 class MarketOrder(Order):
-    def __init__(self, order_id: str, side: str, qty: int, user_id: str, timestamp: str):
+    def __init__(
+            self, 
+            order_id: str, 
+            side: str, 
+            qty: int,
+            user_id: str, 
+            timestamp: str
+    ):
         super().__init__(order_id, side, qty, user_id, timestamp)
     
     @property

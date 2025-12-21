@@ -34,10 +34,10 @@ class TradeLog:
         self._trades.append(trade)
         return trade
 
-    def retrieve_log(self) -> tuple:
+    def retrieve_log(self) -> tuple[Trade, ...]:
         return tuple(self._trades)        # defensive copy
     
-    def retrieve_simple_log(self) -> tuple:
+    def retrieve_simple_log(self) -> tuple[str, ...]:
         return tuple(map(str, self._trades))
 
     def __str__(self) -> str:

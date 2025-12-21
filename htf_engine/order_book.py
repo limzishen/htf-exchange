@@ -25,8 +25,8 @@ class OrderBook:
     bids: Dict[float, Deque[Order]]
     asks: Dict[float, Deque[Order]]
     order_map: Dict[str, Order]
-    best_bids: List[Tuple[float, datetime, str]] 
-    best_asks: List[Tuple[float, datetime, str]]
+    best_bids: List[Tuple[float, str, str]] 
+    best_asks: List[Tuple[float, str, str]]
     last_price: Optional[float]
     last_quantity: Optional[int]
     last_time: Optional[str]
@@ -110,10 +110,10 @@ class OrderBook:
         return order_uuid
 
     def modify_order(
-            self,
-            order_id: str,
-            new_qty: int,
-            new_price: int
+        self,
+        order_id: str,
+        new_qty: int,
+        new_price: float
     ) -> str:
         """Returns current order id if qty decrease and no change else new order_id"""
         if order_id not in self.order_map:
@@ -134,40 +134,55 @@ class OrderBook:
         print("No change to order!")
         return order_id
 
-    def clean_orders(self, order_heap:list, queue_dict:dict) -> None:
+    def clean_orders(
+        self,
+        order_heap: list,
+        queue_dict: dict
+    ) -> None:
         while order_heap and order_heap[0][2] in self.cancelled_orders:
             if queue_dict == self.bids:
                 order_price, timestamp, oid_to_clean = -order_heap[0][0], order_heap[0][1], order_heap[0][2]
             else:
                 order_price, timestamp, oid_to_clean = order_heap[0]
+            
             removed_order = queue_dict[order_price].popleft()
 
             if oid_to_clean in self.order_map:
                 del self.order_map[oid_to_clean]
+            
             heapq.heappop(order_heap)
             self.cancelled_orders.remove(oid_to_clean)
             print(f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap")
-
-
+    
     def best_bid(self) -> Optional[float]:
         self.clean_orders(self.best_bids, self.bids)
+        
         return -self.best_bids[0][0] if self.best_bids else None
 
     def best_ask(self) -> Optional[float]:
         self.clean_orders(self.best_asks, self.asks)
+        
         return self.best_asks[0][0] if self.best_asks else None
 
-    def get_all_pending_orders(self) -> list:
+    def get_all_pending_orders(self) -> list[str]:
         return [str(v) for v in self.order_map.values() if v.order_id not in self.cancelled_orders]
 
     def cancel_order(self, order_id: str) -> bool:
         if order_id in self.order_map:
             self.cancelled_orders.add(order_id)
             return True
+        
         print("Order not found!!")
         return False
 
-    def record_trade(self, price: float, qty: int, buy_order: Order, sell_order: Order, aggressor: str) -> TradeLog:
+    def record_trade(
+            self,
+            price: float,
+            qty: int,
+            buy_order: Order,
+            sell_order: Order,
+            aggressor: str
+    ) -> TradeLog:
         trade = self.trade_log.record(
             price=price,
             qty=qty,

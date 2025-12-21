@@ -1,24 +1,25 @@
 import heapq
-from typing import TYPE_CHECKING
+from typing import Callable, Optional, TYPE_CHECKING
+    
+from htf_engine.orders.order import Order
 
 if TYPE_CHECKING:
     from htf_engine.order_book import OrderBook
-    from htf_engine.orders.order import Order
 
 
 class Matcher:
 
     """Base class for all matchers."""
 
-    def match(self, order_book: "OrderBook", order: "Order") -> None:
+    def match(self, order_book: "OrderBook", order: Order) -> None:
         raise NotImplementedError
     
     def _execute_match(
         self,
-        order_book,
-        order,
-        price_cmp=lambda best_price: True, 
-        place_leftover_fn=None
+        order_book: "OrderBook",
+        order: Order,
+        price_cmp: Callable[[float], bool] = lambda best_price: True, 
+        place_leftover_fn: Optional[Callable[["OrderBook", Order], None]] = None
     ) -> None:
         """
         Core matching loop:
@@ -53,7 +54,7 @@ class Matcher:
             order.qty -= traded_qty
             resting_order.qty -= traded_qty
 
-            trade_price = resting_order.price
+            trade_price = getattr(resting_order, "price")
 
             if order.is_buy_order():
                 order_book.record_trade(

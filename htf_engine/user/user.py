@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from htf_engine.user.user_log import UserLog
 from htf_engine.trades.trade import Trade
@@ -43,7 +43,6 @@ class User:
 
         self.permission_level = 0
 
-
     def cash_in(self, amount: float) -> None:
         self._increase_cash_balance(amount)
         self.user_log.record_cash_in(amount, self.cash_balance)
@@ -58,7 +57,12 @@ class User:
         self._decrease_cash_balance(amount)
         self.user_log.record_cash_out(amount, self.cash_balance)
     
-    def _can_place_order(self, instrument: str, side: str, qty: int) -> bool:
+    def _can_place_order(
+            self,
+            instrument: str,
+            side: str,
+            qty: int
+    ) -> bool:
         quota = self.get_remaining_quota(instrument)
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
@@ -89,7 +93,11 @@ class User:
 
         return order_id
 
-    def cancel_order(self, order_id: str, instrument: str) -> bool:
+    def cancel_order(
+            self,
+            order_id: str,
+            instrument: str
+    ) -> bool:
         if self.cancel_order_callback is None:
             raise RuntimeError("User must be registered before cancelling orders!")
         
@@ -117,7 +125,13 @@ class User:
         except ValueError as e:
             return False
 
-    def update_positions_and_cash_balance(self, trade: Trade, instrument: str, exchange_fee: int) -> None:
+    def update_positions_and_cash_balance(
+            self, 
+            trade: Trade,
+            instrument: str, 
+            exchange_fee: float
+    ) -> None:
+        
         qty = trade.qty
         price = trade.price
 
@@ -170,7 +184,7 @@ class User:
             self.positions[instrument] = new_qty
             self.average_cost[instrument] = new_avg
 
-    def get_positions(self) -> dict:
+    def get_positions(self) -> dict[str, Any]:
         """
         Returns:
         {
@@ -200,13 +214,16 @@ class User:
     def get_realised_pnl(self) -> float:
         return self.realised_pnl
     
-    def get_remaining_quota(self, instrument: str) -> dict:
+    def get_remaining_quota(self, instrument: str) -> dict[str, int]:
         """
         Returns how much more the user can buy or sell for a given instrument
         without breaching the position limit.
 
         Returns:
-            dict: {"buy_quota": int, "sell_quota": int}
+            dict: {
+                "buy_quota": int,
+                "sell_quota": int
+            }
         """
         limit = 100  # TODO: make this configurable if needed
 
@@ -224,28 +241,28 @@ class User:
             "sell_quota": max(0, sell_quota)
         }
     
-    def increase_outstanding_buys(self, instrument, qty):
+    def increase_outstanding_buys(self, instrument: str, qty: int):
         self.outstanding_buys[instrument] += qty
 
-    def increase_outstanding_sells(self, instrument, qty):
+    def increase_outstanding_sells(self, instrument: str, qty: int):
         self.outstanding_sells[instrument] += qty
 
-    def reduce_outstanding_buys(self, instrument, qty):
+    def reduce_outstanding_buys(self, instrument: str, qty: int):
         self.outstanding_buys[instrument] -= qty
 
         if self.outstanding_buys[instrument] == 0:
             self.outstanding_buys.pop(instrument)
 
-    def reduce_outstanding_sells(self, instrument, qty):
+    def reduce_outstanding_sells(self, instrument: str, qty: int):
         self.outstanding_sells[instrument] -= qty
 
         if self.outstanding_sells[instrument] == 0:
             self.outstanding_sells.pop(instrument)
 
-    def get_outstanding_buys(self) -> dict:
+    def get_outstanding_buys(self) -> dict[str, int]:
         return self.outstanding_buys
     
-    def get_outstanding_sells(self) -> dict:
+    def get_outstanding_sells(self) -> dict[str, int]:
         return self.outstanding_sells
     
     def get_permission_level(self) -> int:
