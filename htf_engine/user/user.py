@@ -18,8 +18,6 @@ class User:
 
         self.user_log = UserLog(user_id, username)
 
-        self.exchange = None  # injected later
-
         self.place_order_callback = None
         self.cancel_order_callback = None
         self.modify_order_callback = None

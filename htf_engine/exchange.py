@@ -17,7 +17,6 @@ class Exchange:
 
         self.users[user.user_id] = user
         user.register()
-        user.exchange = self
         user.place_order_callback = self.place_order
         user.cancel_order_callback = self.cancel_order
         user.modify_order_callback = self.modify_order

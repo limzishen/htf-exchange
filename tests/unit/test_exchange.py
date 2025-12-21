@@ -60,9 +60,6 @@ class TestExchange:
         assert exchange.users[u1.user_id] is u1
         assert exchange.users[u2.user_id] is u2
         assert exchange.users[u3.user_id] is u3
-        assert exchange.users[u1.user_id].exchange is exchange
-        assert exchange.users[u2.user_id].exchange is exchange
-        assert exchange.users[u3.user_id].exchange is exchange
         assert exchange.fee == 10
         assert exchange.balance == 0
 
