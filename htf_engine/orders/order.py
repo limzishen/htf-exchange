@@ -20,6 +20,7 @@ class Order:
         self.qty = qty
         self.user_id = user_id
         self.timestamp = timestamp
+        self.stop = False
     
     @property
     def order_type(self) -> str:
@@ -30,6 +31,9 @@ class Order:
 
     def is_sell_order(self) -> bool:
         return self.side == "sell"
+    
+    def is_stop(self): 
+        return self.stop
 
     def __str__(self) -> str:
         raise NotImplementedError

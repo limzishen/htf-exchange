@@ -11,10 +11,14 @@ from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
 from .matchers.market_matcher import MarketOrderMatcher
 from .matchers.post_only_matcher import PostOnlyOrderMatcher
+from .matchers.stop_matcher import StopOrderMatcher
 from .orders.fok_order import FOKOrder
 from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
+from .orders.stop_limit_order import StopLimitOrder
+from .orders.stop_market_order import StopMarketOrder
+from .orders.stop_order import StopOrder
 from .orders.order import Order
 from .orders.post_only_order import PostOnlyOrder
 from .trades.trade import Trade
@@ -31,6 +35,11 @@ class OrderBook:
     last_quantity: Optional[int]
     last_time: Optional[str]
     cancelled_orders: Set[str]
+
+    stop_bids: Dict[float, Deque[StopOrder]]
+    stop_asks: Dict[float, Deque[StopOrder]]
+    stop_bids_price: List[Tuple[float, str, str]]
+    stop_asks_price: List[Tuple[float, str, str]]
 
     trade_log: TradeLog
     on_trade_callback: Optional[Callable[[Trade], None]]
@@ -50,12 +59,19 @@ class OrderBook:
         self.last_time = None
         self.cancelled_orders = set()
 
+        self.stop_bids = defaultdict(deque)
+        self.stop_asks = defaultdict(deque)
+        self.stop_bids_price = []
+        self.stop_asks_price = []
+
         self.matchers = {
             "fok": FOKOrderMatcher(),
             "ioc": IOCOrderMatcher(),
             "limit": LimitOrderMatcher(),
             "market": MarketOrderMatcher(),
             "post-only": PostOnlyOrderMatcher(),
+            "stop-limit": StopOrderMatcher(),
+            "stop-market": StopOrderMatcher()
         }
 
         self.trade_log = TradeLog()
@@ -70,7 +86,8 @@ class OrderBook:
         side: str,
         qty: int,
         price: Optional[float] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None, 
+        stop_price: Optional[float] = None
     ) -> str:
         order_count = next(self.order_counter)
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %Z")
@@ -101,6 +118,10 @@ class OrderBook:
             order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "post-only" and price is not None:
             order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "stop-limit" and stop_price is not None and price is not None:
+            order = StopLimitOrder(order_uuid, side, stop_price, price, qty, user_id, timestamp)
+        elif order_type == "stop-market" and stop_price is not None and price is None:
+            order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
         else:
             raise ValueError(f"Error: Order cannot be created")
 
@@ -109,11 +130,49 @@ class OrderBook:
 
         return order_uuid
 
+    def check_stop_orders(self) -> None: 
+        if not self.last_price: 
+            return 
+        
+        while self.stop_bids_price and -self.stop_bids_price[0][0] <= self.last_price:
+            if self.stop_bids_price[0][2] not in self.cancelled_orders: 
+                order = self.stop_bids[-self.stop_bids_price[0][0]].pop()
+                self.add_order(
+                    order_type=order.underlying_order_type, 
+                    side=order.side, 
+                    qty=order.qty,
+                    price=getattr(order, "price", None), 
+                    user_id=order.user_id
+                )
+            else: 
+                self.cancelled_orders.remove(self.stop_bids_price[0][2])
+
+            del self.order_map[self.stop_bids_price[0][2]]
+            heapq.heappop(self.stop_bids_price)
+        
+        while self.stop_asks_price and self.stop_asks_price[0][0] >= self.last_price:
+            if self.stop_asks_price[0][2] not in self.cancelled_orders:
+                order = self.stop_asks[self.stop_asks_price[0][0]].pop()
+                self.add_order(
+                    order_type=order.underlying_order_type, 
+                    side=order.side, 
+                    qty=order.qty,
+                    price=getattr(order, "price", None), 
+                    user_id=order.user_id
+                )
+            else: 
+                self.cancelled_orders.remove(self.stop_asks_price[0][2])
+
+            del self.order_map[self.stop_asks_price[0][2]]
+            heapq.heappop(self.stop_asks_price)
+
+
     def modify_order(
         self,
         order_id: str,
         new_qty: int,
-        new_price: float
+        new_price: float, 
+        new_stop_price: Optional[float] = None
     ) -> str:
         """Returns current order id if qty decrease and no change else new order_id"""
         if order_id not in self.order_map:
@@ -121,6 +180,17 @@ class OrderBook:
             return "False"
 
         curr_order = self.order_map[order_id]
+
+        if curr_order.stop: 
+            self.cancel_order(curr_order.order_id)
+            return self.add_order(
+                curr_order.order_type, 
+                curr_order.side, 
+                new_qty, 
+                new_price, 
+                curr_order.user_id, 
+                new_stop_price
+            )
 
         if getattr(curr_order, "price", None) != new_price or new_qty > curr_order.qty:
             self.cancelled_orders.add(order_id)

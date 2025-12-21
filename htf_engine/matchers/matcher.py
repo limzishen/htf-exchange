@@ -72,7 +72,7 @@ class Matcher:
                     sell_order=order,
                     aggressor="sell",
                 )
-
+            
             print(f"TRADE {traded_qty} @ {trade_price}")
 
             if resting_order.qty == 0:
@@ -81,6 +81,7 @@ class Matcher:
                 heapq.heappop(best_prices_heap)
                 if not book[best_price]:
                     del book[best_price]
+            order_book.check_stop_orders()
 
         if order.qty > 0 and place_leftover_fn:
             place_leftover_fn(order_book, order)
