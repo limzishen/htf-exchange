@@ -284,8 +284,143 @@ class Exchange:
             "last_qty": ob.last_quantity,
             "timestamp": ob.last_time.isoformat() if ob.last_time else None,
         }
-        
 
-    def get_L2_data(self, user_id, inst):
-        pass
+    def get_L2_data(self, user_id, inst, depth: int = 5):
+        """
+        Level 2 (Market Depth) data.
+
+        Returns aggregated quantities at each price level
+        for bids and asks, up to the specified depth.
+
+        JSON format:
+        {
+            "instrument": str,
+            "bids": [
+                {"price": float, "quantity": int},
+                ...
+            ],
+            "asks": [
+                {"price": float, "quantity": int},
+                ...
+            ]
+        }
+        """
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
+        if inst not in self.order_books:
+            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+
+        ob = self.order_books[inst]
+
+        bids = []
+        asks = []
+
+        # Bids: highest price first
+        for price in sorted(ob.bids.keys(), reverse=True)[:depth]:
+            total_qty = sum(
+                o.qty for o in ob.bids[price]
+                if o.order_id not in ob.cancelled_orders
+            )
+            if total_qty > 0:
+                bids.append({
+                    "price": price,
+                    "quantity": total_qty
+                })
+
+        # Asks: lowest price first
+        for price in sorted(ob.asks.keys())[:depth]:
+            total_qty = sum(
+                o.qty for o in ob.asks[price]
+                if o.order_id not in ob.cancelled_orders
+            )
+            if total_qty > 0:
+                asks.append({
+                    "price": price,
+                    "quantity": total_qty
+                })
+
+        return {
+            "instrument": inst,
+            "bids": bids,
+            "asks": asks,
+        }
+
+    def get_L3_data(self, user_id, inst):
+        """
+        Level 3 (Order-Level) market data.
+
+        Returns all active orders in the order book,
+        preserving FIFO order at each price level.
+
+        JSON format:
+        {
+            "instrument": str,
+            "bids": [
+                {
+                    "price": float,
+                    "orders": [
+                        {
+                            "order_id": str,
+                            "qty": int,
+                            "user_id": str,
+                            "order_type": str,
+                            "timestamp": str
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ],
+            "asks": [
+                {
+                    "price": float,
+                    "orders": [
+                        {
+                            "order_id": str,
+                            "qty": int,
+                            "user_id": str,
+                            "order_type": str,
+                            "timestamp": str
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ]
+        }
+        """
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        if inst not in self.order_books:
+            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+
+        ob = self.order_books[inst]
+
+        def serialize_side(side_dict, reverse=False):
+            levels = []
+            for price in sorted(side_dict.keys(), reverse=reverse):
+                orders = []
+                for o in side_dict[price]:
+                    if o.order_id in ob.cancelled_orders:
+                        continue
+                    orders.append({
+                        "order_id": o.order_id,
+                        "qty": o.qty,
+                        "user_id": o.user_id,
+                        "order_type": o.__class__.__name__,
+                        "timestamp": o.timestamp.isoformat(),
+                    })
+                if orders:
+                    levels.append({
+                        "price": price,
+                        "orders": orders
+                    })
+            return levels
+
+        return {
+            "instrument": inst,
+            "bids": serialize_side(ob.bids, reverse=True),
+            "asks": serialize_side(ob.asks, reverse=False),
+        }
