@@ -10,7 +10,11 @@ if TYPE_CHECKING:
 class Matcher:
 
     """Base class for all matchers."""
-
+    
+    @property
+    def matcher_type(self) -> str:
+        raise NotImplementedError("Subclasses must define `matcher_type`")
+    
     def match(self, order_book: "OrderBook", order: Order) -> None:
         raise NotImplementedError
     

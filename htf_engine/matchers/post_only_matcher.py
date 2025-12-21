@@ -2,6 +2,7 @@ import heapq
 from .matcher import Matcher
 from typing import TYPE_CHECKING
 
+from htf_engine.errors.exchange_errors.matcher_type_mismatch_error import MatcherTypeMismatchError
 from htf_engine.orders.order import Order  
 from htf_engine.orders.post_only_order import PostOnlyOrder
 
@@ -10,9 +11,13 @@ if TYPE_CHECKING:
 
 
 class PostOnlyOrderMatcher(Matcher):
+    @property
+    def matcher_type(self) -> str:
+        return "post-only"
+
     def match(self, order_book: "OrderBook", order: Order) -> None:
         if not isinstance(order, PostOnlyOrder):
-            raise ValueError("Order and Matcher types do not match!")
+            raise MatcherTypeMismatchError(order.order_type, self.matcher_type)
         
         # Check if the incoming order matches existing orders
         if order.is_buy_order():

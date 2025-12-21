@@ -2,6 +2,7 @@ import heapq
 from .matcher import Matcher
 from typing import TYPE_CHECKING
 
+from htf_engine.errors.exchange_errors.matcher_type_mismatch_error import MatcherTypeMismatchError
 from htf_engine.orders.order import Order  
 from htf_engine.orders.limit_order import LimitOrder
 
@@ -10,9 +11,13 @@ if TYPE_CHECKING:
 
 
 class LimitOrderMatcher(Matcher):
+    @property
+    def matcher_type(self) -> str:
+        return "limit"
+    
     def match(self, order_book: "OrderBook", order: Order) -> None:
         if not isinstance(order, LimitOrder):
-            raise ValueError("Order and Matcher types do not match!")
+            raise MatcherTypeMismatchError(order.order_type, self.matcher_type)
         
         def leftover(order_book, order):
             if order.is_buy_order():

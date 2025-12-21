@@ -6,6 +6,7 @@ import uuid
 import heapq
 import itertools
 
+from .errors.exchange_errors.invalid_order_error import InvalidOrderError
 from .matchers.fok_matcher import FOKOrderMatcher
 from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
@@ -123,7 +124,7 @@ class OrderBook:
         elif order_type == "stop-market" and stop_price is not None and price is None:
             order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
         else:
-            raise ValueError(f"Error: Order cannot be created")
+            raise InvalidOrderError()
 
         # Execute matching
         self.matchers[order_type].match(self, order)
