@@ -37,7 +37,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 50 }
@@ -57,7 +57,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 50 }
@@ -77,7 +77,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 100 }
@@ -97,7 +97,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 100 }
@@ -118,7 +118,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 100 }
@@ -139,7 +139,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 100 }
@@ -159,7 +159,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 100 }
@@ -179,7 +179,7 @@ class TestExchange:
 
         assert u1.positions == {}
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5000
         assert u1.get_outstanding_buys() == { "Stock A": 50 }
@@ -199,7 +199,7 @@ class TestExchange:
 
         assert u1.positions == { "Stock A": 50 }
         assert u1.get_realised_pnl() == 0
-        assert u1.get_unrealised_pnl() == 0     # Prices haven't moved yet
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0     # Prices haven't moved yet
         assert u1.get_total_exposure() == 500   # User 1 owns 50 shares @ $10 each
         assert u1.get_cash_balance() == 4490
         assert u1.get_outstanding_buys() == {}
@@ -208,7 +208,7 @@ class TestExchange:
         
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0
-        assert u2.get_unrealised_pnl() == 0     # Prices haven't moved yet
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == 0     # Prices haven't moved yet
         assert u2.get_total_exposure() == 500   # User 2 owns -50 shares @ $10 each
         assert u2.get_cash_balance() == 5490
         assert u2.get_outstanding_buys() == {}
@@ -228,7 +228,7 @@ class TestExchange:
 
         assert u1.positions == { "Stock A": 25 }
         assert u1.get_realised_pnl() == 250     # User 1 sold 25 shares, earning $10 profit per share
-        assert u1.get_unrealised_pnl() == 250   # User 1 has 25 shares with cost basis of $10 (current price = $20)
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 250   # User 1 has 25 shares with cost basis of $10 (current price = $20)
         assert u1.get_total_exposure() == 500
         assert u1.get_cash_balance() == 4980
         assert u1.get_outstanding_buys() == {}
@@ -237,7 +237,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500  # User 2 is short 50 shares with unrealised loss of $10 per share
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500  # User 2 is short 50 shares with unrealised loss of $10 per share
         assert u2.get_total_exposure() == 1000  # User 2 owns -50 shares @ $20 each
         assert u2.get_cash_balance() == 5490
         assert u2.get_outstanding_buys() == {}
@@ -246,7 +246,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 25 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0     # Prices haven't moved yet
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0     # Prices haven't moved yet
         assert u3.get_total_exposure() == 500   # User 3 owns 25 shares @ $20 each
         assert u3.get_cash_balance() == 4490
         assert u3.get_outstanding_buys() == {}
@@ -266,7 +266,7 @@ class TestExchange:
 
         assert u1.positions == { "Stock A": 10 }    # User 1 sold all their shares
         assert u1.get_realised_pnl() == 400         # User 1 sold another 15 shares, earning $10 profit per share
-        assert u1.get_unrealised_pnl() == 100       # User 1 is holding 10 shares with cost basis of $10 (current price = $20)
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 100       # User 1 is holding 10 shares with cost basis of $10 (current price = $20)
         assert u1.get_total_exposure() == 200     
         assert u1.get_cash_balance() == 5270
         assert u1.get_outstanding_buys() == {}
@@ -275,7 +275,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500      # User 2 is still short 50 shares with unrealised loss of $10 per share
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500      # User 2 is still short 50 shares with unrealised loss of $10 per share
         assert u2.get_total_exposure() == 1000      # User 2 still owns -50 shares @ $20 each
         assert u2.get_cash_balance() == 5490
         assert u2.get_outstanding_buys() == {}
@@ -284,7 +284,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 40 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         # Prices haven't moved yet
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         # Prices haven't moved yet
         assert u3.get_total_exposure() == 800       # User 3 owns 40 shares @ $20 each
         assert u3.get_cash_balance() == 4180
         assert u3.get_outstanding_buys() == {}
@@ -304,7 +304,7 @@ class TestExchange:
 
         assert u1.positions == { "Stock A": 5 }     # User 1 sold 5 shares
         assert u1.get_realised_pnl() == 450         # User 1 sold another 5 shares, earning $10 profit per share
-        assert u1.get_unrealised_pnl() == 50        # User 1 is holding 10 shares with cost basis of $10 (current price = $20)
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 50        # User 1 is holding 10 shares with cost basis of $10 (current price = $20)
         assert u1.get_total_exposure() == 100
         assert u1.get_cash_balance() == 5360     
         assert u1.get_outstanding_buys() == {}
@@ -313,7 +313,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500      # User 2 is still short 50 shares with unrealised loss of $10 per share
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500      # User 2 is still short 50 shares with unrealised loss of $10 per share
         assert u2.get_total_exposure() == 1000      # User 2 still owns -50 shares @ $20 each
         assert u2.get_cash_balance() == 5490
         assert u2.get_outstanding_buys() == {}
@@ -322,7 +322,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 45 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         # Prices haven't moved yet
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         # Prices haven't moved yet
         assert u3.get_total_exposure() == 900       # User 3 owns 40 shares @ $20 each
         assert u3.get_cash_balance() == 4070
         assert u3.get_outstanding_buys() == {}
@@ -342,7 +342,7 @@ class TestExchange:
 
         assert u1.positions == {}                   # User 1 sold all shares
         assert u1.get_realised_pnl() == 500         # User 1 sold another 5 shares, earning $10 profit per share
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -351,7 +351,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500      # User 2 is still short 50 shares with unrealised loss of $10 per share
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500      # User 2 is still short 50 shares with unrealised loss of $10 per share
         assert u2.get_total_exposure() == 1000      # User 2 still owns -50 shares @ $20 each
         assert u2.get_cash_balance() == 5490
         assert u2.get_outstanding_buys() == {}
@@ -360,7 +360,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 50 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         # Prices haven't moved yet
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         # Prices haven't moved yet
         assert u3.get_total_exposure() == 1000      # User 3 owns 50 shares @ $20 each
         assert u3.get_cash_balance() == 3960
         assert u3.get_outstanding_buys() == {}
@@ -381,7 +381,7 @@ class TestExchange:
 
         assert u1.positions == {}                
         assert u1.get_realised_pnl() == 500      
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -390,7 +390,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500     
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500     
         assert u2.get_total_exposure() == 1000     
         assert u2.get_cash_balance() == 5490
         assert u2.get_outstanding_buys() == {}
@@ -399,7 +399,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 50 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         
         assert u3.get_total_exposure() == 1000      
         assert u3.get_cash_balance() == 3960
         assert u3.get_outstanding_buys() == {}
@@ -421,7 +421,7 @@ class TestExchange:
 
         assert u1.positions == {}                   
         assert u1.get_realised_pnl() == 500         
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -430,7 +430,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500      
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500      
         assert u2.get_total_exposure() == 1000   
         assert u2.get_cash_balance() == 5490  
         assert u2.get_outstanding_buys() == {}
@@ -439,7 +439,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 50 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         
         assert u3.get_total_exposure() == 1000     
         assert u3.get_cash_balance() == 3960
         assert u3.get_outstanding_buys() == {}
@@ -462,7 +462,7 @@ class TestExchange:
 
         assert u1.positions == {}                   
         assert u1.get_realised_pnl() == 500         
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -471,7 +471,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500      
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500      
         assert u2.get_total_exposure() == 1000   
         assert u2.get_cash_balance() == 5490  
         assert u2.get_outstanding_buys() == {}
@@ -480,7 +480,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 50 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         
         assert u3.get_total_exposure() == 1000     
         assert u3.get_cash_balance() == 3960
         assert u3.get_outstanding_buys() == {}
@@ -503,7 +503,7 @@ class TestExchange:
 
         assert u1.positions == {}                   
         assert u1.get_realised_pnl() == 500         
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -512,7 +512,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -50 }
         assert u2.get_realised_pnl() == 0             
-        assert u2.get_unrealised_pnl() == -500      
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -500      
         assert u2.get_total_exposure() == 1000   
         assert u2.get_cash_balance() == 5490  
         assert u2.get_outstanding_buys() == {}
@@ -521,7 +521,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 50 }
         assert u3.get_realised_pnl() == 0
-        assert u3.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 0         
         assert u3.get_total_exposure() == 1000     
         assert u3.get_cash_balance() == 3960
         assert u3.get_outstanding_buys() == {}
@@ -545,7 +545,7 @@ class TestExchange:
 
         assert u1.positions == {}                   
         assert u1.get_realised_pnl() == 500         
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -554,7 +554,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -20 }
         assert u2.get_realised_pnl() == -2700       # User 2 bought 30 shares at $100 each, incurring $90 loss per share   
-        assert u2.get_unrealised_pnl() == -1800     # User 2 is still short -20 shares with cost basis of $10 (current price = $100)
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -1800     # User 2 is still short -20 shares with cost basis of $10 (current price = $100)
         assert u2.get_total_exposure() == 2000     
         assert u2.get_cash_balance() == 2480
         assert u2.get_outstanding_buys() == {}
@@ -563,7 +563,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 20 }
         assert u3.get_realised_pnl() == 2400        # User 3 sold 30 shares at $100 each, earning $80 profit per share   
-        assert u3.get_unrealised_pnl() == 1600      # User 3 still holds 20 shares with cost basis of $20 (current price = $100)
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 1600      # User 3 still holds 20 shares with cost basis of $20 (current price = $100)
         assert u3.get_total_exposure() == 2000 
         assert u3.get_cash_balance() == 6950  
         assert u3.get_outstanding_buys() == {}
@@ -587,7 +587,7 @@ class TestExchange:
 
         assert u1.positions == {}                   
         assert u1.get_realised_pnl() == 500         
-        assert u1.get_unrealised_pnl() == 0         
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0         
         assert u1.get_total_exposure() == 0
         assert u1.get_cash_balance() == 5450
         assert u1.get_outstanding_buys() == {}
@@ -596,7 +596,7 @@ class TestExchange:
 
         assert u2.positions == { "Stock A": -20 }
         assert u2.get_realised_pnl() == -2700       # User 2 bought 30 shares at $100 each, incurring $90 loss per share   
-        assert u2.get_unrealised_pnl() == -1800     # User 2 is still short -20 shares with cost basis of $10 (current price = $100)
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -1800     # User 2 is still short -20 shares with cost basis of $10 (current price = $100)
         assert u2.get_total_exposure() == 2000     
         assert u2.get_cash_balance() == 2480
         assert u2.get_outstanding_buys() == {}
@@ -605,7 +605,7 @@ class TestExchange:
 
         assert u3.positions == { "Stock A": 20 }
         assert u3.get_realised_pnl() == 2400        # User 3 sold 30 shares at $100 each, earning $80 profit per share   
-        assert u3.get_unrealised_pnl() == 1600      # User 3 still holds 20 shares with cost basis of $20 (current price = $100)
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 1600      # User 3 still holds 20 shares with cost basis of $20 (current price = $100)
         assert u3.get_total_exposure() == 2000 
         assert u3.get_cash_balance() == 6950  
         assert u3.get_outstanding_buys() == {}

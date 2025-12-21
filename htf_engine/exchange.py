@@ -120,3 +120,66 @@ class Exchange:
     
     def change_fee(self, new_fee: int) -> None:
         self.fee = new_fee
+    
+    # Read Operations
+        
+    def get_user_positions(self, user_id):
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        user = self.users[user_id]
+
+        user_positions = user.get_positions()
+        return user_positions
+
+    def get_user_cash_balance(self, user_id):
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        user = self.users[user_id]
+        
+        user_cash_balance = user.get_cash_balance()
+        return user_cash_balance
+
+    def get_user_realised_pnl(self, user_id):
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        user = self.users[user_id]
+        
+        user_realised_pnl = user.get_realised_pnl()
+        return user_realised_pnl
+
+    def get_user_unrealised_pnl_for_inst(self, user_id, inst):
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        if inst not in self.order_books: 
+            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+        
+        user = self.users[user_id]
+
+        if inst not in user.positions:
+            raise ValueError(f"User {user.user_id} has no position in {inst}")
+
+        ob = self.order_books.get(inst)
+        if ob is None or ob.last_price is None:
+            return 0.0
+
+        qty = user.positions[inst]
+        avg = user.average_cost[inst]
+
+        return qty * (ob.last_price - avg)
+
+    def get_user_unrealised_pnl(self, user_id) -> float:
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+
+        user = self.users[user_id]
+        total = 0.0
+
+        for inst in user.positions:
+            total += self.get_user_unrealised_pnl_for_inst(user_id, inst)
+
+        return total
+        
