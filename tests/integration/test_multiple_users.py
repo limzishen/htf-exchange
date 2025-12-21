@@ -67,7 +67,35 @@ class TestExchange:
         assert u1.get_outstanding_sells() == { inst: 70 }
         assert u1.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 30 }
 
-        id_user1_order3 = exchange.modify_order(u1.user_id, inst, id_user1_order2, 50, 20)
+        # User 1 wants to modify the previous order to: post-only sell 70 Stock A at $20
+        id_user1_order3 = exchange.modify_order(u1.user_id, inst, id_user1_order2, 70, 20)
+
+        assert id_user1_order2 != id_user1_order3
+
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
+        assert bids[10] == 50
+        assert bids[20] == 0
+        assert bids[30] == 0
+        assert asks[10] == 0
+        assert asks[20] == 70
+        assert asks[30] == 0
+        assert last_price is None
+        assert last_quantity is None
+        assert exchange.balance == 0
+
+        assert u1.positions == {}
+        assert u1.get_realised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
+        assert exchange.get_user_exposure(u1.user_id) == 0
+        assert u1.get_cash_balance() == 5000
+        assert u1.get_outstanding_buys() == { inst: 50 }
+        assert u1.get_outstanding_sells() == { inst: 70 }
+        assert u1.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 30 }
+
+        # User 1 wants to modify the previous order to: post-only sell 50 Stock A at $20
+        id_user1_order4 = exchange.modify_order(u1.user_id, inst, id_user1_order3, 50, 20)
+
+        assert id_user1_order3 == id_user1_order4       # order_id should be the same since only quantity decreased
 
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 50
@@ -175,8 +203,8 @@ class TestExchange:
         assert u1.get_outstanding_sells() == { inst: 100 }
         assert u1.get_remaining_quota(inst) == { "buy_quota": 0, "sell_quota": 0 }
         
-        # User 1 cancels the second order
-        u1.cancel_order(id_user1_order3, inst)
+        # User 1 cancels id_user1_order4
+        u1.cancel_order(id_user1_order4, inst)
 
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -196,7 +224,7 @@ class TestExchange:
         assert u1.get_outstanding_sells() == { inst: 50 }
         assert u1.get_remaining_quota(inst) == { "buy_quota": 0, "sell_quota": 50 }
 
-        # User 1 cancels the first order
+        # User 1 cancels id_user1_order1
         u1.cancel_order(id_user1_order1, inst)
 
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
@@ -366,7 +394,7 @@ class TestExchange:
 
         # User 3 wants to market buy another 20 Stock A (but remaining ask liquidity is 5 only)
         u3.place_order(inst, "market", "buy", 20)
-        
+
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
