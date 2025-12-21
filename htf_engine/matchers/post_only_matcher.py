@@ -46,3 +46,4 @@ class PostOnlyOrderMatcher(Matcher):
             price_cmp=lambda p: False,  # The loop shouldn't run. (We can use the price_cmp function from limitorder, but it will eval to False anyway)
             place_leftover_fn=leftover
         )
+        

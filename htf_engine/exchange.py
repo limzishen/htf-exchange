@@ -214,14 +214,18 @@ class Exchange:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
 
         user = self.users[user_id]
-        total = 0.0
+        user_unrealised_pnl = 0.0
 
         for inst in user.positions:
-            total += self.get_user_unrealised_pnl_for_inst(user_id, inst)
+            user_unrealised_pnl += self.get_user_unrealised_pnl_for_inst(user_id, inst)
 
-        return total
+        return user_unrealised_pnl
     
-    def get_user_exposure_for_inst(self, user_id: str, inst: str) -> float:
+    def get_user_exposure_for_inst(
+            self,
+            user_id: str, 
+            inst: str
+        ) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -239,19 +243,21 @@ class Exchange:
 
         qty = user.positions[inst]
 
-        return abs(qty) * ob.last_price
+        # Exposure is always positive regardless of long or short
+        user_exposure_for_inst = abs(qty) * ob.last_price
+        return user_exposure_for_inst
     
     def get_user_exposure(self, user_id: str) -> float:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
 
         user = self.users[user_id]
-        total = 0.0
+        user_exposure = 0.0
 
         for inst in user.positions:
-            total += self.get_user_exposure_for_inst(user_id, inst)
+            user_exposure += self.get_user_exposure_for_inst(user_id, inst)
         
-        return total
+        return user_exposure
     
     def get_user_remaining_quota_for_inst(
             self,
@@ -263,7 +269,10 @@ class Exchange:
         without breaching the position limit.
 
         Returns:
-            dict: {"buy_quota": int, "sell_quota": int}
+            dict: {
+                "buy_quota": int,
+                "sell_quota": int
+            }
         """
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
@@ -298,6 +307,8 @@ class Exchange:
             "last_qty": int | None,
             "last_time": str | None
         }
+
+        By default, all users are entitled to Level 1 market data.
         """
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
