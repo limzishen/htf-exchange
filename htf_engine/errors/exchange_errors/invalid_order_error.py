@@ -1,9 +1,15 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
 from .exchange_error import ExchangeError
 
 
-class InvalidOrderError(ExchangeError):
+class InvalidOrderError(ExchangeError, ABC):
+    """
+    Abstract base class for all invalid-order errors.
+    """
+
     error_code = "INVALID_ORDER"
 
-    def default_message(self) -> str:
-        return "The order is invalid."
+    def header_string(self) -> str:
+        return "Invalid Order: "
     
