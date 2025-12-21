@@ -158,46 +158,6 @@ class User:
     def get_realised_pnl(self) -> float:
         return self.realised_pnl
     
-    def get_unrealised_pnl_for_instrument(self, inst) -> float:
-        if inst not in self.positions:
-            raise ValueError(f"User {self.user_id} has no position in {inst}")
-
-        ob = self.exchange.order_books.get(inst)
-        if ob is None or ob.last_price is None:
-            return 0.0
-
-        qty = self.positions[inst]
-        avg = self.average_cost[inst]
-
-        return qty * (ob.last_price - avg)
-    
-    def get_unrealised_pnl(self) -> float:
-        total = 0.0
-
-        for inst in self.positions:
-            total += self.get_unrealised_pnl_for_instrument(inst)
-
-        return total
-    
-    def get_exposure_for_instrument(self, inst) -> float:
-        if inst not in self.positions:
-            return 0.0
-
-        ob = self.exchange.order_books.get(inst)
-        if ob is None or ob.last_price is None:
-            return 0.0
-
-        qty = self.positions[inst]
-        return abs(qty) * ob.last_price
-    
-    def get_total_exposure(self) -> float:
-        total = 0.0
-
-        for inst in self.positions:
-            total += self.get_exposure_for_instrument(inst)
-        
-        return total
-    
     def get_remaining_quota(self, instrument: str) -> dict:
         """
         Returns how much more the user can buy or sell for a given instrument

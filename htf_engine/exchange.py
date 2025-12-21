@@ -169,7 +169,8 @@ class Exchange:
         qty = user.positions[inst]
         avg = user.average_cost[inst]
 
-        return qty * (ob.last_price - avg)
+        user_unrealised_pnl_for_inst = qty * (ob.last_price - avg)
+        return user_unrealised_pnl_for_inst
 
     def get_user_unrealised_pnl(self, user_id) -> float:
         if user_id not in self.users:
@@ -182,4 +183,61 @@ class Exchange:
             total += self.get_user_unrealised_pnl_for_inst(user_id, inst)
 
         return total
+    
+    def get_user_exposure_for_inst(self, user_id, inst):
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        if inst not in self.order_books: 
+            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+        
+        user = self.users[user_id]
+
+        if inst not in user.positions:
+            raise ValueError(f"User {user.user_id} has no position in {inst}")
+
+        ob = self.order_books.get(inst)
+        if ob is None or ob.last_price is None:
+            return 0.0
+
+        qty = user.positions[inst]
+
+        return abs(qty) * ob.last_price
+    
+    def get_user_exposure(self, user_id):
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+
+        user = self.users[user_id]
+        total = 0.0
+
+        for inst in user.positions:
+            total += self.get_user_exposure_for_inst(user_id, inst)
+        
+        return total
+    
+    def get_user_remaining_quota_for_inst(self, user_id: str, inst: str) -> dict:
+        """
+        Returns how much more the user can buy or sell for a given instrument
+        without breaching the position limit.
+
+        Returns:
+            dict: {"buy_quota": int, "sell_quota": int}
+        """
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        if inst not in self.order_books: 
+            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+        
+        user = self.users[user_id]
+
+        user_remaining_quota_for_inst = user.get_remaining_quota(inst)
+        return user_remaining_quota_for_inst
+    
+    def get_L1_data(self, user_id, inst):
+        pass
+
+    def get_L2_data(self, user_id, inst):
+        pass
         
