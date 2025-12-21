@@ -1,9 +1,16 @@
 import heapq
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from htf_engine.order_book import OrderBook
+    from htf_engine.orders.order import Order
+
+
 class Matcher:
 
     """Base class for all matchers."""
 
-    def match(self, order_book, order) -> None:
+    def match(self, order_book: "OrderBook", order: "Order") -> None:
         raise NotImplementedError
     
     def _execute_match(
