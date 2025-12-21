@@ -6,6 +6,7 @@ class CancelOrderAction(UserAction):
     order_id: str
     instrument_id: str
 
-    def __str__(self):
+    def __str__(self) -> str:
         parent_str = super().__str__()
+        
         return f"{parent_str}| Order Cancelled: {self.order_id} | Instrument ID: {self.instrument_id}"

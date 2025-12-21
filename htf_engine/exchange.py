@@ -153,7 +153,8 @@ class Exchange:
     def change_fee(self, new_fee: float) -> None:
         self.fee = new_fee
     
-    # Read Operations
+
+    # GET Operations (for API)
         
     def get_user_positions(self, user_id: str) -> dict:
         if user_id not in self.users:
@@ -275,7 +276,11 @@ class Exchange:
         user_remaining_quota_for_inst = user.get_remaining_quota(inst)
         return user_remaining_quota_for_inst
     
-    def get_L1_data(self, user_id: str, inst: str) -> dict[str, Any]:
+    def get_L1_data(
+            self,
+            user_id: str,
+            inst: str
+    ) -> dict[str, Any]:
         """
         Level 1 (Top-of-Book) market data.
 
@@ -330,7 +335,7 @@ class Exchange:
             user_id: str,
             inst: str,
             depth: int = 5
-        ) -> dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Level 2 (Market Depth) data.
 
@@ -388,7 +393,7 @@ class Exchange:
             user_id: str,
             inst: str,
             depth: int = 5
-        ) -> dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Level 3 (Order-Level) market data.
 

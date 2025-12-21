@@ -8,7 +8,8 @@ class UserAction:
     username: str
     action: str
 
-    def __str__(self):
+    def __str__(self) -> str:
         ts = self.timestamp.isoformat().replace("+00:00", "Z")
+        
         return f"{ts} | {self.user_id} | {self.username} | {self.action}"
 

@@ -24,7 +24,12 @@ class User:
 
     permission_level: int
 
-    def __init__(self, user_id: str, username: str, cash_balance: float = 0.0):
+    def __init__(
+            self,
+            user_id: str,
+            username: str,
+            cash_balance: float = 0.0
+    ):
         self.user_id = user_id
         self.username = username
         self.cash_balance = cash_balance          
@@ -47,7 +52,7 @@ class User:
         self._increase_cash_balance(amount)
         self.user_log.record_cash_in(amount, self.cash_balance)
 
-    def register(self, permission_level: int):
+    def register(self, permission_level: int) -> None:
         self.user_log.record_register_user(self.cash_balance)
         self.permission_level = permission_level
 
@@ -65,7 +70,6 @@ class User:
     ) -> bool:
         quota = self.get_remaining_quota(instrument)
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
-
 
     def place_order(
             self,
@@ -241,19 +245,19 @@ class User:
             "sell_quota": max(0, sell_quota)
         }
     
-    def increase_outstanding_buys(self, instrument: str, qty: int):
+    def increase_outstanding_buys(self, instrument: str, qty: int) -> None:
         self.outstanding_buys[instrument] += qty
 
-    def increase_outstanding_sells(self, instrument: str, qty: int):
+    def increase_outstanding_sells(self, instrument: str, qty: int) -> None:
         self.outstanding_sells[instrument] += qty
 
-    def reduce_outstanding_buys(self, instrument: str, qty: int):
+    def reduce_outstanding_buys(self, instrument: str, qty: int) -> None:
         self.outstanding_buys[instrument] -= qty
 
         if self.outstanding_buys[instrument] == 0:
             self.outstanding_buys.pop(instrument)
 
-    def reduce_outstanding_sells(self, instrument: str, qty: int):
+    def reduce_outstanding_sells(self, instrument: str, qty: int) -> None:
         self.outstanding_sells[instrument] -= qty
 
         if self.outstanding_sells[instrument] == 0:

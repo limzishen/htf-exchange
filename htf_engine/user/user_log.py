@@ -9,6 +9,7 @@ from htf_engine.user.action_log.cancel_order_action import CancelOrderAction
 from htf_engine.user.action_log.place_order_action import PlaceOrderAction
 from htf_engine.user.action_log.modify_order_action import ModifyOrderAction
 
+
 class UserLog:
     def __init__(self, user_id: str, username: str):
         self._actions: List[UserAction] = []
@@ -26,7 +27,7 @@ class UserLog:
             action="REGISTER",
             user_balance=user_balance
         )
-        
+
         self._actions.append(action)
 
     def record_place_order(
