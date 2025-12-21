@@ -9,9 +9,9 @@ class TestExchange:
         asks = defaultdict(int)
 
         for price, orders in snap['bids']:
-            bids[price] = sum(o[3] for o in orders)  # o[3] is qty
+            bids[price] = sum(o[3] for o in orders if o not in ob.cancelled_orders)  # o[3] is qty
         for price, orders in snap['asks']:
-            asks[price] = sum(o[3] for o in orders)
+            asks[price] = sum(o[3] for o in orders if o not in ob.cancelled_orders)
         
         return bids, asks, snap['last_price'], snap['last_quantity']
         

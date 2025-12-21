@@ -13,6 +13,10 @@ class Order:
         self.qty = qty
         self.user_id = user_id
         self.timestamp = timestamp
+    
+    @property
+    def order_type(self) -> str:
+        raise NotImplementedError("Subclasses must define `order_type`")
 
     def is_buy_order(self):
         return self.side == "buy"

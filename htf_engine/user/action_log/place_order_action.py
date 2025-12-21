@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from typing import Optional
+
 from .user_action import UserAction
 
 @dataclass(frozen=True)
@@ -7,7 +9,7 @@ class PlaceOrderAction(UserAction):
     order_type: str
     side: str
     quantity: int
-    price: float
+    price: Optional[float]
 
     def __str__(self):
         parent_str = super().__str__()

@@ -46,7 +46,7 @@ class TestOrderCancellation:
     def test_order_is_removed_in_correct_sequence(self, ob):
         """Canceling an order and ensuring the heap and queue order match"""
         oid1 = ob.add_order("limit", "buy", 10, 100)
-        oid2 = ob.add_order("limit", "buy", 10, 100)
+        oid2 = ob.add_order("limit", "buy", 50, 100)
         assert ob.bids[100][0].order_id == oid1
         assert ob.bids[100][1].order_id == oid2
         assert ob.cancel_order(oid1) is True
@@ -56,8 +56,6 @@ class TestOrderCancellation:
         assert best_bid_price == 100
         assert len(ob.bids[100]) == 1
         assert ob.bids[100][0].order_id == oid2
-
-
 
     def test_cancel_last_order_at_price_level_updates_best_price(self, ob):
         """Canceling the last order at a price level updates best bid/ask."""

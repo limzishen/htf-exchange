@@ -1,6 +1,5 @@
 import os
 import sys
-import pprint
 
 # allow importing htf-engine
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -10,7 +9,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 from htf_engine.exchange import Exchange
-from htf_engine.user import User
+from htf_engine.user.user import User
 from htf_engine.order_book import OrderBook
 
 app = Flask(__name__)

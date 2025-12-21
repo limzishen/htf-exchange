@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from htf_engine.user.action_log.user_action import UserAction
 from htf_engine.user.action_log.register_user_action  import RegisterUserAction
@@ -10,7 +10,7 @@ from htf_engine.user.action_log.place_order_action import PlaceOrderAction
 from htf_engine.user.action_log.modify_order_action import ModifyOrderAction
 
 class UserLog:
-    def __init__(self, user_id, username):
+    def __init__(self, user_id: str, username: str):
         self._actions: List[UserAction] = []
         self.user_id = user_id 
         self.username = username
@@ -28,7 +28,7 @@ class UserLog:
         )
         self._actions.append(action)
 
-    def record_place_order(self, instrument_id: str, order_type: str, side: str, quantity: int, price: float):
+    def record_place_order(self, instrument_id: str, order_type: str, side: str, quantity: int, price: Optional[float]):
         action = PlaceOrderAction(
             timestamp=self._get_now(),
             user_id=self.user_id,

@@ -12,12 +12,14 @@ class StopOrderMatcher(Matcher):
     def match(self, order_book: "OrderBook", order: "Order") -> None:
         if order.is_buy_order():
             if order.stop_price >  order_book.last_price:
+                order_book.stop_bids[order.stop_price].append(order)
                 heapq.heappush(order_book.stop_bids, (-order.stop_price, order.timestamp, order.order_id))
             else: 
                 raise ValueError(f"Stop price less the last traded price")
         
         elif order.is_sell_order():
             if order.stop_price <  order_book.last_price:
+                order_book.stop_asks[order.stop_price].append(order)
                 heapq.heappush(order_book.stop_asks, (order.stop_price, order.timestamp, order.order_id))
             else: 
                 raise ValueError(f"Stop price greater the last traded price")

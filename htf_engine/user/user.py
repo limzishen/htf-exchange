@@ -1,14 +1,33 @@
 from collections import defaultdict
-from htf_engine.user.user_log import UserLog
+from typing import Callable, Dict, Optional
 
+from htf_engine.user.user_log import UserLog
 from htf_engine.trades.trade import Trade
 
 
 class User:
-    def __init__(self, user_id: str, username: str, cash_balance: float=0.0):
+    user_id: str
+    username: str
+    cash_balance: float
+    realised_pnl: float
+
+    positions: Dict[str, int]
+    average_cost: Dict[str, float]
+    outstanding_buys: defaultdict[str, int]
+    outstanding_sells: defaultdict[str, int]
+
+    user_log: UserLog
+
+    place_order_callback: Optional[Callable[[str, str, str, str, int, Optional[float]], str]]
+    cancel_order_callback: Optional[Callable[[str, str, str], bool]]
+    modify_order_callback: Optional[Callable[[str, str, str, int, float], str]]
+
+    permission_level: int
+
+    def __init__(self, user_id: str, username: str, cash_balance: float = 0.0):
         self.user_id = user_id
         self.username = username
-        self.cash_balance = cash_balance            # TODO... can ignore for now
+        self.cash_balance = cash_balance          
         self.realised_pnl = 0.0
 
         self.positions = {}                         # instrument -> quantity
@@ -44,7 +63,17 @@ class User:
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 
-    def place_order(self, instrument: str, order_type: str, side: str, qty: int, price: float=None) -> str:
+    def place_order(
+            self,
+            instrument: str,
+            order_type: str,
+            side: str,
+            qty: int,
+            price: Optional[float] = None
+    ) -> str:
+        if self.place_order_callback is None:
+            raise RuntimeError("User must be registered before placing orders!")
+        
         # --- CHECK LIMIT ---
         if not self._can_place_order(instrument, side, qty):
             raise ValueError(f"User {self.user_id} cannot place order: would exceed position limit")
@@ -54,13 +83,16 @@ class User:
             self.increase_outstanding_buys(instrument, qty)
         else:
             self.increase_outstanding_sells(instrument, qty)
-
         # Place order
         order_id = self.place_order_callback(self.user_id, instrument, order_type, side, qty, price)
         self.user_log.record_place_order(instrument, order_type, side, qty, price)
+
         return order_id
 
     def cancel_order(self, order_id: str, instrument: str) -> bool:
+        if self.cancel_order_callback is None:
+            raise RuntimeError("User must be registered before cancelling orders!")
+        
         try:
             self.cancel_order_callback(self.user_id, instrument, order_id)
             self.user_log.record_cancel_order(order_id, instrument)
@@ -68,7 +100,16 @@ class User:
         except ValueError as e:
             return False
     
-    def modify_order(self, instrument_id: str, order_id: str, new_qty: int, new_price: float) -> bool:
+    def modify_order(
+            self,
+            instrument_id: str,
+            order_id: str,
+            new_qty: int,
+            new_price: float
+    ) -> bool:
+        if self.modify_order_callback is None:
+            raise RuntimeError("User must be registered before modifying orders!")
+        
         try:
             self.modify_order_callback(self.user_id, instrument_id, order_id, new_qty, new_price)
             self.user_log.record_modify_order(order_id, instrument_id, new_qty, self.cash_balance)
@@ -147,10 +188,10 @@ class User:
             for inst, qty in self.positions.items()
         }
 
-    def _increase_cash_balance(self, amount: int) -> None:
+    def _increase_cash_balance(self, amount: float) -> None:
         self.cash_balance += amount
 
-    def _decrease_cash_balance(self, amount: int) -> None:
+    def _decrease_cash_balance(self, amount: float) -> None:
         self.cash_balance -= amount
 
     def get_cash_balance(self) -> float:

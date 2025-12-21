@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .order_book import OrderBook
 from .user.user import User
 from .orders.order import Order
@@ -25,10 +27,18 @@ class Exchange:
 
     def add_order_book(self, instrument: str, ob: OrderBook) -> None:
         self.order_books[instrument] = ob
-        ob.on_trade_callback = lambda trade, ob=ob: self.process_trade(trade, ob.instrument)
-        ob.cleanup_discarded_order_callback = lambda order, ob=ob: self.cleanup_discarded_order(order, ob.instrument)
+        ob.on_trade_callback = lambda trade: self.process_trade(trade, ob.instrument)
+        ob.cleanup_discarded_order_callback = lambda order: self.cleanup_discarded_order(order, ob.instrument)
 
-    def place_order(self, user_id: str, instrument:str, order_type:str, side:str, qty:int, price=None) -> str:
+    def place_order(
+            self,
+            user_id: str,
+            instrument: str,
+            order_type: str,
+            side: str,
+            qty: int,
+            price: Optional[float] = None
+    ) -> str:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
@@ -39,7 +49,14 @@ class Exchange:
         order_id = ob.add_order(order_type, side, qty, price, user_id=user_id)
         return order_id
 
-    def modify_order(self, user_id: str, instrument: str, order_id: str, new_qty: int, new_price: float) -> str: 
+    def modify_order(
+            self,
+            user_id: str,
+            instrument: str,
+            order_id: str,
+            new_qty: int,
+            new_price: float
+    ) -> str: 
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         

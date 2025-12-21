@@ -4,7 +4,7 @@ from datetime import datetime
 @dataclass(frozen=True)
 class UserAction:
     timestamp: datetime
-    user_id: int
+    user_id: str
     username: str
     action: str
 
