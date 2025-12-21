@@ -2,6 +2,7 @@ import pytest
 from htf_engine.exchange import Exchange
 from htf_engine.order_book import OrderBook
 from htf_engine.user.user import User
+from htf_engine.trades.trade_log import TradeLog
 
 @pytest.fixture
 def ob():
@@ -26,3 +27,7 @@ def u2():
 @pytest.fixture
 def u3():
     return User("csgod", "Brian", 5000)
+
+@pytest.fixture
+def trade_log():
+    return TradeLog()
