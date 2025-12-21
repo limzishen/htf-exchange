@@ -41,11 +41,17 @@ def test_cancel_order(exchange, u1):
     u1.cancel_order(oid, "Stock A")
     assert u1.outstanding_buys["Stock A"] == 0  
 
-def test_modify_order(exchange, u1): 
+def test_modify_buy_order(exchange, u1): 
     exchange.register_user(u1)
     oid = u1.place_order("Stock A", "limit", "buy", 10, 10)
     u1.modify_order("Stock A", oid, 5, 10)
     assert u1.outstanding_buys["Stock A"] == 5
+
+def test_modify_sell_order(exchange, u1): 
+    exchange.register_user(u1)
+    oid = u1.place_order("Stock A", "limit", "sell", 10, 10)
+    u1.modify_order("Stock A", oid, 5, 10)
+    assert u1.outstanding_sells["Stock A"] == 5
 
 
     
