@@ -1,4 +1,3 @@
-import heapq
 from .matcher import Matcher
 from typing import TYPE_CHECKING
 

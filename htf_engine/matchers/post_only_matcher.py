@@ -28,7 +28,7 @@ class PostOnlyOrderMatcher(Matcher):
                     order_book.cleanup_discarded_order(order)
                     raise ValueError("Post-only sell would take liquidity")
         
-        def leftover(order_book: OrderBook, order: Order):
+        def leftover(order_book: "OrderBook", order: Order):
             if not isinstance(order, PostOnlyOrder):
                 raise ValueError("Order and Matcher types do not match!")
             
