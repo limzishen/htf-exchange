@@ -7,7 +7,6 @@ def test_register_user(exchange, u1):
     exchange.register_user(u1)
     assert u1.user_id in exchange.users
     assert exchange.users[u1.user_id] == u1
-    assert u1.exchange == exchange
     assert u1.place_order_callback is not None
     assert u1.cancel_order_callback is not None
     assert u1.modify_order_callback is not None

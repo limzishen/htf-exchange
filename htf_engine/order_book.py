@@ -10,10 +10,13 @@ from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
 from .matchers.market_matcher import MarketOrderMatcher
 from .matchers.post_only_matcher import PostOnlyOrderMatcher
+from .matchers.stop_matcher import StopOrderMatcher
 from .orders.fok_order import FOKOrder
 from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
+from .orders.stop_limit_order import StopLimitOrder
+from .orders.stop_market_order import StopMarketOrder
 from .orders.order import Order
 from .orders.post_only_order import PostOnlyOrder
 from .trades.trade_log import TradeLog
@@ -29,12 +32,12 @@ class OrderBook:
         self.best_asks = []
         self.order_counter = itertools.count()
         self.last_price = None
+        self.last_quantity = None
+        self.last_time = None
         self.cancelled_orders = set()
-        # stops orders 
-        # ob -> stops -> orders
-        # stop -> ob to add order
-        # stop order affect outstanding buy and sell in user 
 
+        self.stop_bids_price = []
+        self.stop_asks_price = []
 
         self.matchers = {
             "fok": FOKOrderMatcher(),
@@ -42,6 +45,8 @@ class OrderBook:
             "limit": LimitOrderMatcher(),
             "market": MarketOrderMatcher(),
             "post-only": PostOnlyOrderMatcher(),
+            "stop-limit": StopOrderMatcher(),
+            "stop-market": StopOrderMatcher()
         }
 
         self.trade_log = TradeLog()
@@ -50,7 +55,7 @@ class OrderBook:
 
         self.enable_stp = enable_stp
 
-    def add_order(self, order_type:str, side:str, qty:int, price:float=None, user_id:str = None) -> str:
+    def add_order(self, order_type:str, side:str, qty:int, price:float = None, user_id:str = None, stop_price:float = None) -> str:
         order_count = next(self.order_counter)
         timestamp = datetime.now(timezone.utc)
         data_string = (
@@ -75,12 +80,29 @@ class OrderBook:
             order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "post-only":
             order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "stop-limit":
+            order = StopLimitOrder(order_uuid, side, stop_price, price, qty, user_id, timestamp)
+        elif order_type == "stop-market":
+            order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
         
-
         # Execute matching
         self.matchers[order_type].match(self, order)
 
         return order_uuid
+
+    def check_stop_orders(self): 
+        while self.stop_bids_price and -self.stop_bids_price[0][0] <= self.last_price:
+            order = self.order_map[self.stop_bids_price[0][2]]
+            self.add_order(order.order_type, order.side, order.qty, order.price, order.user_id)
+            del self.order_map[self.stop_bids_price[0][2]]
+            heapq.heappop(self.stop_bids_price)
+        
+        while self.stop_asks_price and self.stop_asks_price[0][0] >= self.last_price:
+            order = self.order_map[self.stop_asks_price[0][2]]
+            self.add_order(order.order_type, order.side, order.qty, order.price, order.user_id)
+            del self.order_map[self.stop_asks_price[0][2]]
+            heapq.heappop(self.stop_asks_price)
+
 
     def modify_order(self, order_id:str, new_qty:int, new_price:int) -> str:
         """Returns current order id if qty decrease and no change else new order_id"""
@@ -100,8 +122,6 @@ class OrderBook:
 
         print("No change to order!")
         return order_id
-
-
 
     def clean_orders(self, order_heap:list, queue_dict:dict) -> None:
         while order_heap and order_heap[0][2] in self.cancelled_orders:
@@ -146,6 +166,10 @@ class OrderBook:
             sell_order_id=sell_order.order_id,
             aggressor=aggressor,
         )
+
+        self.last_price = trade.price
+        self.last_quantity = trade.qty
+        self.last_time = trade.timestamp
         
         if self.on_trade_callback:
             self.on_trade_callback(trade)  # Notify Exchange
@@ -229,6 +253,7 @@ class OrderBook:
             "best_bid": self.best_bid(),
             "best_ask": self.best_ask(),
             "last_price": self.last_price,
+            "last_quantity": self.last_quantity,
         }
 
     def __eq__(self, other):

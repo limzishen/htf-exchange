@@ -18,19 +18,20 @@ class User:
 
         self.user_log = UserLog(user_id, username)
 
-        self.exchange = None  # injected later
-
         self.place_order_callback = None
         self.cancel_order_callback = None
         self.modify_order_callback = None
+
+        self.permission_level = 0
 
 
     def cash_in(self, amount: float) -> None:
         self._increase_cash_balance(amount)
         self.user_log.record_cash_in(amount, self.cash_balance)
 
-    def register(self):
+    def register(self, permission_level):
         self.user_log.record_register_user(self.cash_balance)
+        self.permission_level = permission_level
 
     def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
@@ -205,3 +206,6 @@ class User:
     
     def get_outstanding_sells(self) -> dict:
         return self.outstanding_sells
+    
+    def get_permission_level(self) -> int:
+        return self.permission_level

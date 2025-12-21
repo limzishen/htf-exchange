@@ -1,9 +1,16 @@
 import heapq
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from htf_engine.order_book import OrderBook
+    from htf_engine.orders.order import Order
+
+
 class Matcher:
 
     """Base class for all matchers."""
 
-    def match(self, order_book, order) -> None:
+    def match(self, order_book: "OrderBook", order: "Order") -> None:
         raise NotImplementedError
     
     def _execute_match(
@@ -30,8 +37,11 @@ class Matcher:
             best_prices_heap = order_book.best_bids
             book = order_book.bids
 
-        while order.qty > 0 and best_prices_heap:
+        while order.qty > 0:
             order_book.clean_orders(best_prices_heap, book)
+            
+            if not best_prices_heap:
+                break
 
             best_price = best_prices_heap[0][0] if order.is_buy_order() else -best_prices_heap[0][0]
 
@@ -61,9 +71,8 @@ class Matcher:
                     sell_order=order,
                     aggressor="sell",
                 )
-
+            
             print(f"TRADE {traded_qty} @ {trade_price}")
-            order_book.last_price = trade_price
 
             if resting_order.qty == 0:
                 book[best_price].popleft()
@@ -71,6 +80,7 @@ class Matcher:
                 heapq.heappop(best_prices_heap)
                 if not book[best_price]:
                     del book[best_price]
+            order_book.check_stop_orders()
 
         if order.qty > 0 and place_leftover_fn:
             place_leftover_fn(order_book, order)

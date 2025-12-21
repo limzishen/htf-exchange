@@ -1,4 +1,5 @@
 from .order import Order 
+from .stop_order import StopOrder
 
 class StopLimitOrder(StopOrder):
     def __init__(self, order_id: str, side: str, stop_price: float, limit_price: float, qty: int, user_id: str, timestamp: str):
