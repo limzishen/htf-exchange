@@ -31,6 +31,7 @@ class TradeLog:
             sell_order_id=sell_order_id,
             aggressor=aggressor,
         )
+        
         self._trades.append(trade)
         return trade
 

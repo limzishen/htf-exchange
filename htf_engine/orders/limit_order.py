@@ -18,5 +18,5 @@ class LimitOrder(Order):
     def order_type(self) -> str:
         return "limit"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[ID {self.order_id}] {self.side.upper()} {self.price} x {self.qty} at {self.timestamp}"

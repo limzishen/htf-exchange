@@ -108,7 +108,7 @@ class Matcher:
 
             for resting in book[price]:
                 if resting.user_id == incoming_order.user_id:
-                    return True  # 🚨 STP violation
+                    return True  # STP violation
 
                 remaining -= resting.qty
                 if remaining <= 0:

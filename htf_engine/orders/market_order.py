@@ -16,5 +16,5 @@ class MarketOrder(Order):
     def order_type(self) -> str:
         return "market"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[ID {self.order_id}] {self.side.upper()} any x {self.qty} at {self.timestamp}"

@@ -12,7 +12,7 @@ class Trade:
     sell_order_id: str
     aggressor: str
 
-    def __str__(self):
+    def __str__(self) -> str:
         ts = self.timestamp.isoformat().replace("+00:00", "Z")
         side = self.aggressor.upper()
 

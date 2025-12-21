@@ -25,11 +25,11 @@ class Order:
     def order_type(self) -> str:
         raise NotImplementedError("Subclasses must define `order_type`")
 
-    def is_buy_order(self):
+    def is_buy_order(self) -> bool:
         return self.side == "buy"
 
-    def is_sell_order(self):
+    def is_sell_order(self) -> bool:
         return self.side == "sell"
 
-    def __str__(self):
+    def __str__(self) -> str:
         raise NotImplementedError

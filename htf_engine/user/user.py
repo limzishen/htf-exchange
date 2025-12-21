@@ -47,7 +47,7 @@ class User:
         self._increase_cash_balance(amount)
         self.user_log.record_cash_in(amount, self.cash_balance)
 
-    def register(self, permission_level):
+    def register(self, permission_level: int):
         self.user_log.record_register_user(self.cash_balance)
         self.permission_level = permission_level
 
