@@ -11,8 +11,8 @@ class TestOrderInitialisation:
     def test_limit_order_creation(self):
         """Test limit order creation."""
         timestamp = datetime.now(timezone.utc)
-        order = LimitOrder(order_id=1, side="buy", price=100, qty=10, user_id=None, timestamp=timestamp)
-        assert order.order_id == 1
+        order = LimitOrder(order_id="1", side="buy", price=100, qty=10, user_id="u1", timestamp=str(timestamp))
+        assert order.order_id == "1"
         assert order.side == "buy"
         assert order.price == 100
         assert order.qty == 10
@@ -22,8 +22,8 @@ class TestOrderInitialisation:
     def test_market_order_creation(self):
         """Test market order creation."""
         timestamp = datetime.now(timezone.utc)
-        order = MarketOrder(order_id=2, side="sell", qty=5, user_id=None, timestamp=timestamp)
-        assert order.order_id == 2
+        order = MarketOrder(order_id="2", side="sell", qty=5, user_id="u1", timestamp=str(timestamp)) 
+        assert order.order_id == "2"
         assert order.side == "sell"
         assert order.qty == 5
         assert not order.is_buy_order()
@@ -34,12 +34,12 @@ class TestOrderInitialisation:
         timestamp = datetime.now(timezone.utc)
 
         with pytest.raises(InvalidOrderQuantityError) as e1:
-            LimitOrder(1, "buy", 100, 0, user_id=None, timestamp=timestamp)
+            LimitOrder("1", "buy", 100, 0, user_id="u1", timestamp=str(timestamp))
 
         assert str(e1.value) == "[INVALID_ORDER_QUANTITY] Invalid Order: Order quantity must be positive (received=0)."
 
         with pytest.raises(InvalidOrderQuantityError) as e2:
-            MarketOrder(1, "buy", 0, user_id=None, timestamp=timestamp)
+            MarketOrder("1", "buy", 0, user_id="u1", timestamp=str(timestamp))
 
         assert str(e2.value) == "[INVALID_ORDER_QUANTITY] Invalid Order: Order quantity must be positive (received=0)."
 
@@ -48,12 +48,12 @@ class TestOrderInitialisation:
         timestamp = datetime.now(timezone.utc)
 
         with pytest.raises(InvalidOrderQuantityError) as e3:
-            LimitOrder(1, "buy", 100, -1, user_id=None, timestamp=timestamp)
+            LimitOrder("1", "buy", 100, -1, user_id="u1", timestamp=str(timestamp))
 
         assert str(e3.value) == "[INVALID_ORDER_QUANTITY] Invalid Order: Order quantity must be positive (received=-1)."
 
         with pytest.raises(InvalidOrderQuantityError) as e4:
-            MarketOrder(1, "buy", -67, user_id=None, timestamp=timestamp)
+            MarketOrder(1, "buy", -67, user_id="u1", timestamp=str(timestamp))
 
         assert str(e4.value) == "[INVALID_ORDER_QUANTITY] Invalid Order: Order quantity must be positive (received=-67)."
     
