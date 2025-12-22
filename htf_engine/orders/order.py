@@ -1,3 +1,6 @@
+from htf_engine.errors.exchange_errors.invalid_order_side_error import InvalidOrderSideError
+
+
 class Order:
     VALID_SIDES = {"buy", "sell"}
     
@@ -10,7 +13,7 @@ class Order:
             timestamp: str
     ):
         if side not in self.VALID_SIDES:
-            raise ValueError(f"Invalid order side '{side}'. Must be 'buy' or 'sell'.")
+            raise InvalidOrderSideError(side)
 
         if qty <= 0:
             raise ValueError("Order quantity must be > 0.")
@@ -37,3 +40,4 @@ class Order:
 
     def __str__(self) -> str:
         raise NotImplementedError
+    

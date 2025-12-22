@@ -1,6 +1,9 @@
 from collections import defaultdict
 import pytest
 
+from htf_engine.errors.exchange_errors.permission_denied_error import PermissionDeniedError
+
+
 class TestExchange:
     def _nice_snapshot(self, ob):
         snap = ob.snapshot()
@@ -80,9 +83,10 @@ class TestExchange:
 
         # --- L2: Only permission >=2 can access ---
         # u1 should fail
-        with pytest.raises(ValueError) as e1:
+        with pytest.raises(PermissionDeniedError) as e1:
             exchange.get_L2_data(u1.user_id, inst)
-        assert "does not have access to L2 market data" in str(e1.value)
+            
+        assert str(e1.value) == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=2, actual=1)."
 
         # u2 should succeed
         data2 = exchange.get_L2_data(u2.user_id, inst)
@@ -96,14 +100,16 @@ class TestExchange:
 
         # --- L3: Only permission >=3 can access ---
         # u1 fails
-        with pytest.raises(ValueError) as e1:
+        with pytest.raises(PermissionDeniedError) as e1:
             exchange.get_L3_data(u1.user_id, inst)
-        assert "does not have access to L3 market data" in str(e1.value)
+
+        assert str(e1.value) == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=3, actual=1)."
 
         # u2 fails
-        with pytest.raises(ValueError) as e2:
+        with pytest.raises(PermissionDeniedError) as e2:
             exchange.get_L3_data(u2.user_id, inst)
-        assert "does not have access to L3 market data" in str(e2.value)
+
+        assert str(e2.value) == "[PERMISSION_DENIED] User 'cheater6767' does not have sufficient permissions (required=3, actual=2)."
 
         # u3 succeeds
         data3 = exchange.get_L3_data(u3.user_id, inst)

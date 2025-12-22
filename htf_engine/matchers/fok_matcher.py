@@ -1,6 +1,7 @@
 from .matcher import Matcher
 from typing import TYPE_CHECKING
 
+from htf_engine.errors.exchange_errors.fok_insufficient_liquidity_error import FOKInsufficientLiquidityError
 from htf_engine.errors.exchange_errors.matcher_type_mismatch_error import MatcherTypeMismatchError
 from htf_engine.orders.order import Order  
 from htf_engine.orders.fok_order import FOKOrder
@@ -29,9 +30,8 @@ class FOKOrderMatcher(Matcher):
         )
 
         if available_qty < order.qty:
-            print(f"FOK order {order.order_id} cancelled due to insufficient liquidity")
             order_book.cleanup_discarded_order(order)
-            raise ValueError(f"Insufficient Liquidity for FOK order: cancelling order {order.order_id} from User {order.user_id}")
+            raise FOKInsufficientLiquidityError()
 
         self._execute_match(
             order_book,

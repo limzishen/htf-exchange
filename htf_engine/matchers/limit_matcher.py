@@ -19,7 +19,10 @@ class LimitOrderMatcher(Matcher):
         if not isinstance(order, LimitOrder):
             raise MatcherTypeMismatchError(order.order_type, self.matcher_type)
         
-        def leftover(order_book, order):
+        def leftover(order_book: "OrderBook", order: Order):
+            if not isinstance(order, LimitOrder):
+                raise MatcherTypeMismatchError(order.order_type, self.matcher_type)
+        
             if order.is_buy_order():
                 order_book.bids[order.price].append(order)
                 heapq.heappush(order_book.best_bids, (-order.price, order.timestamp, order.order_id))

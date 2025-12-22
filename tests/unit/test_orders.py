@@ -1,7 +1,10 @@
+from datetime import datetime, timezone
 import pytest
+
+from htf_engine.errors.exchange_errors.invalid_stop_price_error import InvalidStopPriceError
 from htf_engine.orders.limit_order import LimitOrder
 from htf_engine.orders.market_order import MarketOrder
-from datetime import datetime, timezone
+
 
 class TestOrderInitialisation:
     def test_limit_order_creation(self):
@@ -94,19 +97,25 @@ def test_check_stop_orders(ob):
 def test_modify_stop_orders(ob): 
     oid = ob.add_order("stop-limit", "buy", 10, user_id=None, stop_price=200, price=200)
     new_oid = ob.modify_order(oid, 20, 200, new_stop_price=200)
+    
     assert ob.stop_bids_price[0][0] == -200
     assert len(ob.stop_bids_price) == 2
     assert ob.order_map[new_oid].qty == 20
+
     ob.add_order("limit", "buy", 10, price=200, user_id=None)
     ob.add_order("limit", "sell", 10, price=200, user_id=None)
+
     assert len(ob.stop_bids_price) == 0
 
     oid = ob.add_order("stop-limit", "buy", 10, user_id=None, stop_price=201, price=200)
     new_oid = ob.modify_order(oid, new_qty=10, new_price=200, new_stop_price=300)
+
     assert len(ob.stop_bids_price) == 2
     assert ob.order_map[new_oid].qty == 10
+
     ob.add_order("limit", "buy", 10, price=200, user_id=None)
     ob.add_order("limit", "sell", 10, price=200, user_id=None)
+
     assert new_oid in ob.order_map
     assert len(ob.stop_bids_price) == 2
     assert ob.order_map[new_oid].qty == 10
@@ -118,6 +127,7 @@ def test_modify_stop_orders(ob):
 
     ob.add_order("limit", "buy", 10, price=300, user_id=None)
     ob.add_order("limit", "sell", 10, price=300, user_id=None)
+
     assert len(ob.stop_bids_price) == 0
     assert len(ob.bids[200]) == 3
     assert ob.bids[200][0].order_id != new_oid
@@ -126,24 +136,5 @@ def test_error_stop_orders(ob):
     ob.add_order("limit", "buy", 10, price=200, user_id=None)
     ob.add_order("limit", "sell", 10, price=200, user_id=None)
 
-    with pytest.raises(ValueError, match="Stop price less than or equal to last traded price"):
+    with pytest.raises(InvalidStopPriceError, match="Stop price less than or equal to last traded price"):
         ob.add_order("stop-limit", "buy", 10, price=200, user_id=None, stop_price=200)
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-

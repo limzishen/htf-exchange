@@ -2,6 +2,7 @@ import heapq
 from typing import Callable, Optional, TYPE_CHECKING
     
 from htf_engine.orders.order import Order
+from htf_engine.errors.exchange_errors.self_trade_prevention_error import SelfTradePreventionError
 
 if TYPE_CHECKING:
     from htf_engine.order_book import OrderBook
@@ -33,7 +34,7 @@ class Matcher:
         if self._would_self_trade(order_book, order, price_cmp):
             print(f"STP triggered: cancelling order {order.order_id}")
             order_book.cleanup_discarded_order(order)
-            raise ValueError(f"STP triggered: cancelling order {order.order_id} from User {order.user_id}")
+            raise SelfTradePreventionError(order.order_id, order.user_id)
 
         if order.is_buy_order():
             best_prices_heap = order_book.best_asks
@@ -97,11 +98,13 @@ class Matcher:
         if incoming_order.is_buy_order():
             if not order_book.best_asks:
                 return False
+            
             book = order_book.asks
             prices = sorted(book.keys())
         else:
             if not order_book.best_bids:
                 return False
+            
             book = order_book.bids
             prices = sorted(book.keys(), reverse=True)
 

@@ -1,6 +1,9 @@
 from collections import defaultdict
 import pytest
 
+from htf_engine.errors.exchange_errors.fok_insufficient_liquidity_error import FOKInsufficientLiquidityError
+from htf_engine.errors.exchange_errors.post_only_violation_error import PostOnlyViolationError
+
 
 class TestExchange:
     def _nice_snapshot(self, ob):
@@ -513,9 +516,11 @@ class TestExchange:
         assert u3.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 120 }
 
         # User 2 tries to post-only buy another 50 Stock A at $105 (but it is rejected, as it matches User 3's limit sell order at $100)
-        with pytest.raises(ValueError, match=f"Post-only buy would take liquidity"):  
+        with pytest.raises(PostOnlyViolationError) as e1:
             u2.place_order(inst, "post-only", "buy", 50, 105)
         
+        assert str(e1.value) == "[POST_ONLY_VIOLATION] Invalid Order: Post-only order would take liquidity and was rejected."
+       
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
@@ -555,8 +560,10 @@ class TestExchange:
         assert u3.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 120 }
 
         # User 2 tries to FOK buy another 50 Stock A at $101 (but it is rejected, as there are only 30 shares of ask liquidity <= $101)
-        with pytest.raises(ValueError, match=f"Insufficient Liquidity for FOK order: cancelling order .* from User {u2.user_id}"):  
+        with pytest.raises(FOKInsufficientLiquidityError) as e2:
             u2.place_order(inst, "fok", "buy", 50, 101)
+        
+        assert str(e2.value) == "[FOK_INSUFFICIENT_LIQUIDITY] Invalid Order: FOK order had insufficient liquidity and was cancelled."
         
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
