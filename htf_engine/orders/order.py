@@ -1,4 +1,5 @@
 from htf_engine.errors.exchange_errors.invalid_order_side_error import InvalidOrderSideError
+from htf_engine.errors.exchange_errors.invalid_order_quantity_error import InvalidOrderQuantityError
 
 
 class Order:
@@ -16,7 +17,7 @@ class Order:
             raise InvalidOrderSideError(side)
 
         if qty <= 0:
-            raise ValueError("Order quantity must be > 0.")
+            raise InvalidOrderQuantityError(qty)
     
         self.order_id = order_id
         self.side = side

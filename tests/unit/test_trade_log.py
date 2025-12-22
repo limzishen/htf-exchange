@@ -1,5 +1,7 @@
 import pytest
 from datetime import timezone
+
+from htf_engine.errors.exchange_errors.invalid_aggressor_error import InvalidAggressorError
 from htf_engine.trades.trade import Trade
 
 class TestTradeLog:
@@ -25,7 +27,7 @@ class TestTradeLog:
         assert len(trade_log.retrieve_log()) == 1
 
     def test_record_invalid_aggressor(self, trade_log):
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InvalidAggressorError) as e1:
             trade_log.record(
                 price=50,
                 qty=5,
@@ -35,7 +37,7 @@ class TestTradeLog:
                 sell_order_id="order2",
                 aggressor="hold"
             )
-        assert "Invalid aggressor: hold" in str(exc_info.value)
+        assert str(e1.value) == "[INVALID_AGGRESSOR] Invalid aggressor hold received. Must be 'buy' or 'sell'."
 
     def test_retrieve_simple_log(self, trade_log):
         trade_log.record(

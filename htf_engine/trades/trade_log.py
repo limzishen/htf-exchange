@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+
+from htf_engine.errors.exchange_errors.invalid_aggressor_error import InvalidAggressorError
 from .trade import Trade
 
 
@@ -19,7 +21,7 @@ class TradeLog:
         aggressor: str
     ):
         if aggressor not in self.VALID_AGGRESSORS:
-            raise ValueError(f"Invalid aggressor: {aggressor}")
+            raise InvalidAggressorError(aggressor=aggressor)
 
         trade = Trade(
             timestamp=datetime.now(timezone.utc),
