@@ -49,10 +49,3 @@ def test_record_cancel_order(exchange, u1):
     assert u1.user_log._actions[2].user_id == u1.user_id
     assert u1.user_log._actions[2].order_id == oid
     assert u1.user_log._actions[2].instrument_id == "Stock A" 
-
-
-
-
-
-
-
