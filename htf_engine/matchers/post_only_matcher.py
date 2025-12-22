@@ -36,7 +36,7 @@ class PostOnlyOrderMatcher(Matcher):
         
         def leftover(order_book: "OrderBook", order: Order):
             if not isinstance(order, PostOnlyOrder):
-                raise ValueError("Order and Matcher types do not match!")
+                raise MatcherTypeMismatchError(order.order_type, self.matcher_type)
             
             if order.is_buy_order():
                 order_book.bids[order.price].append(order)
