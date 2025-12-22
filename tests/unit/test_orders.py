@@ -75,7 +75,7 @@ class TestOrderInitialisation:
         )
 
         with pytest.raises(InvalidOrderQuantityError) as e4:
-            MarketOrder(1, "buy", -67, user_id="u1", timestamp=str(timestamp))
+            MarketOrder("1", "buy", -67, user_id="u1", timestamp=str(timestamp))
 
         assert (
             str(e4.value)

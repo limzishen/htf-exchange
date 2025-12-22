@@ -657,6 +657,7 @@ class TestExchange:
         # User 2 tries to FOK buy another 50 Stock A at $101 (but it is rejected, as there are only 30 shares of ask liquidity <= $101)
         with pytest.raises(FOKInsufficientLiquidityError) as e2:
             u2.place_order(inst, "fok", "buy", 50, 101)
+            print(e2)
 
         assert (
             str(e2.value)
