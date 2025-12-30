@@ -168,9 +168,9 @@ class TestLimitOrderMatching:
     def test_large_imbalance_same_price(self, ob):
         """Many same-price orders get matched FIFO; remainder rests."""
         # 3 buys of 10 @ 100 => 30 bid qty
-        b1 = ob.add_order("limit", "buy", 10, 100)
-        b2 = ob.add_order("limit", "buy", 10, 100)
-        b3 = ob.add_order("limit", "buy", 10, 100)
+        ob.add_order("limit", "buy", 10, 100)
+        ob.add_order("limit", "buy", 10, 100)
+        ob.add_order("limit", "buy", 10, 100)
 
         # 4 sells of 1 @ 100 then 100 @ 100 => total sell 104
         ob.add_order("limit", "sell", 1, 100)

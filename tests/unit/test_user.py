@@ -1,8 +1,3 @@
-import pytest
-from htf_engine.user.user import User
-from htf_engine.exchange import Exchange
-
-
 def test_register_user(exchange, u1):
     exchange.register_user(u1)
     assert u1.user_id in exchange.users

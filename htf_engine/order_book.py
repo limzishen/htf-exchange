@@ -46,6 +46,7 @@ class OrderBook:
     trade_log: TradeLog
     on_trade_callback: Optional[Callable[[Trade], None]]
     cleanup_discarded_order_callback: Optional[Callable[[Order], None]]
+    record_stop_trigger_callback: Optional[Callable[[str, str, StopOrder], None]]
 
     def __init__(self, instrument: str, enable_stp: bool = True):
         self.instrument = instrument
@@ -79,7 +80,7 @@ class OrderBook:
         self.trade_log = TradeLog()
         self.on_trade_callback = None  # Exchange handler!!
         self.cleanup_discarded_order_callback = None
-
+        self.record_stop_trigger_callback = None
         self.enable_stp = enable_stp
 
     def add_order(
@@ -139,12 +140,13 @@ class OrderBook:
         return order_uuid
 
     def check_stop_orders(self) -> None:
-        if not self.last_price:
+        if not self.last_price or not self.record_stop_trigger_callback:
             return
 
         while self.stop_bids_price and -self.stop_bids_price[0][0] <= self.last_price:
             if self.stop_bids_price[0][2] not in self.cancelled_orders:
                 order = self.stop_bids[-self.stop_bids_price[0][0]].pop()
+                self.record_stop_trigger_callback(order.user_id, self.instrument, order)
                 self.add_order(
                     order_type=order.underlying_order_type,
                     side=order.side,
@@ -161,6 +163,7 @@ class OrderBook:
         while self.stop_asks_price and self.stop_asks_price[0][0] >= self.last_price:
             if self.stop_asks_price[0][2] not in self.cancelled_orders:
                 order = self.stop_asks[self.stop_asks_price[0][0]].pop()
+                self.record_stop_trigger_callback(order.user_id, self.instrument, order)
                 self.add_order(
                     order_type=order.underlying_order_type,
                     side=order.side,

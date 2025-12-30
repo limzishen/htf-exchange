@@ -8,6 +8,7 @@ from htf_engine.user.action_log.cash_out_action import CashOutAction
 from htf_engine.user.action_log.cancel_order_action import CancelOrderAction
 from htf_engine.user.action_log.place_order_action import PlaceOrderAction
 from htf_engine.user.action_log.modify_order_action import ModifyOrderAction
+from htf_engine.user.action_log.record_stop_trigger import RecordStopTrigger
 
 
 class UserLog:
@@ -26,6 +27,32 @@ class UserLog:
             username=self.username,
             action="REGISTER",
             user_balance=user_balance,
+        )
+
+        self._actions.append(action)
+
+    def record_stops_trigger(
+        self,
+        instrument_id: str,
+        order_type: str,
+        underlying_order_type: str,
+        side: str,
+        quantity: int,
+        stop_price: float,
+        price: Optional[float],
+    ) -> None:
+        action = RecordStopTrigger(
+            timestamp=self._get_now(),
+            user_id=self.user_id,
+            username=self.username,
+            action="STOP TRIGGER",
+            instrument_id=instrument_id,
+            order_type=order_type,
+            underlying_order_type=underlying_order_type,
+            side=side,
+            quantity=quantity,
+            stop_price=stop_price,
+            price=price,
         )
 
         self._actions.append(action)

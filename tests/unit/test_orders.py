@@ -130,7 +130,7 @@ def test_stop_market_sell_order_creation(ob):
 
 
 def test_check_stop_orders(ob):
-    oid = ob.add_order("stop-limit", "buy", 10, user_id=None, stop_price=200, price=200)
+    ob.add_order("stop-limit", "buy", 10, user_id=None, stop_price=200, price=200)
     ob.add_order("limit", "buy", 10, price=200, user_id=None)
     ob.add_order("limit", "sell", 10, price=200, user_id=None)
     assert ob.bids[200][0].is_buy_order()

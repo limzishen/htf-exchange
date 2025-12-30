@@ -10,6 +10,7 @@ from htf_engine.errors.user_errors.insufficient_balance_for_withdrawal_error imp
 )
 from htf_engine.user.user_log import UserLog
 from htf_engine.trades.trade import Trade
+from htf_engine.orders.stop_order import StopOrder
 
 
 class User:
@@ -26,7 +27,7 @@ class User:
     user_log: UserLog
 
     place_order_callback: Optional[
-        Callable[[str, str, str, str, int, Optional[float]], str]
+        Callable[[str, str, str, str, int, Optional[float], Optional[float]], str]
     ]
     cancel_order_callback: Optional[Callable[[str, str, str], bool]]
     modify_order_callback: Optional[Callable[[str, str, str, int, float], str]]
@@ -75,6 +76,17 @@ class User:
             qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
         )
 
+    def log_stops_trigger(self, order: StopOrder, instrument_id: str):
+        self.user_log.record_stops_trigger(
+            instrument_id=instrument_id,
+            order_type=order.order_type,
+            underlying_order_type=order.underlying_order_type,
+            side=order.side,
+            quantity=order.qty,
+            stop_price=order.stop_price,
+            price=getattr(order, "price", None),
+        )
+
     def place_order(
         self,
         instrument: str,
@@ -82,6 +94,7 @@ class User:
         side: str,
         qty: int,
         price: Optional[float] = None,
+        stop_price: Optional[float] = None,
     ) -> str:
         if self.place_order_callback is None:
             raise UserNotFoundError(self.user_id)
@@ -103,7 +116,7 @@ class User:
 
         # Place order
         order_id = self.place_order_callback(
-            self.user_id, instrument, order_type, side, qty, price
+            self.user_id, instrument, order_type, side, qty, price, stop_price
         )
 
         # Record the order in the log
@@ -119,7 +132,7 @@ class User:
             self.cancel_order_callback(self.user_id, instrument, order_id)
             self.user_log.record_cancel_order(order_id, instrument)
             return True
-        except ValueError as e:
+        except ValueError:
             return False
 
     def modify_order(
@@ -136,7 +149,7 @@ class User:
                 order_id, instrument_id, new_qty, self.cash_balance
             )
             return True
-        except ValueError as e:
+        except ValueError:
             return False
 
     def update_positions_and_cash_balance(

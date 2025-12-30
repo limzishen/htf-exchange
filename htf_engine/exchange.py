@@ -8,6 +8,7 @@ from .errors.exchange_errors.user_not_found_error import UserNotFoundError
 from .order_book import OrderBook
 from .user.user import User
 from .orders.order import Order
+from .orders.stop_order import StopOrder
 from .trades.trade import Trade
 
 
@@ -41,6 +42,11 @@ class Exchange:
         ob.cleanup_discarded_order_callback = (
             lambda order: self.cleanup_discarded_order(order, ob.instrument)
         )
+        ob.record_stop_trigger_callback = (
+            lambda user_id, instrument, order: self.record_stops_triggers(
+                user_id, instrument, order
+            )
+        )
 
     def place_order(
         self,
@@ -50,6 +56,7 @@ class Exchange:
         side: str,
         qty: int,
         price: Optional[float] = None,
+        stop_price: Optional[float] = None,
     ) -> str:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
@@ -59,9 +66,18 @@ class Exchange:
 
         ob = self.order_books[instrument]
         order_id = ob.add_order(
-            order_type=order_type, side=side, qty=qty, price=price, user_id=user_id
+            order_type=order_type,
+            side=side,
+            qty=qty,
+            price=price,
+            user_id=user_id,
+            stop_price=stop_price,
         )
         return order_id
+
+    def record_stops_triggers(self, user_id: str, instrument: str, order: StopOrder):
+        user = self.users[user_id]
+        user.log_stops_trigger(order, instrument)
 
     def modify_order(
         self,

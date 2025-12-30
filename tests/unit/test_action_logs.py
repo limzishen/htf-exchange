@@ -52,3 +52,27 @@ def test_record_cancel_order(exchange, u1):
     assert u1.user_log._actions[2].user_id == u1.user_id
     assert u1.user_log._actions[2].order_id == oid
     assert u1.user_log._actions[2].instrument_id == "Stock A"
+
+
+def test_record_stop_trigger(exchange, u1, u2, u3):
+    exchange.register_user(u1)
+    exchange.register_user(u2)
+    exchange.register_user(u3)
+    u1.place_order("Stock A", "stop-limit", "buy", 10, price=10, stop_price=10)
+
+    assert u1.user_log._actions[0].action == "REGISTER"
+    assert u1.user_log._actions[1].action == "PLACE ORDER"
+
+    u2.place_order("Stock A", "limit", "buy", 10, price=10)
+    u3.place_order("Stock A", "limit", "sell", 10, price=10)
+
+    assert u1.user_log._actions[2].action == "STOP TRIGGER"
+    assert u1.user_log._actions[2].username == u1.username
+    assert u1.user_log._actions[2].user_id == u1.user_id
+    assert u1.user_log._actions[2].instrument_id == "Stock A"
+    assert u1.user_log._actions[2].underlying_order_type == "limit"
+    assert u1.user_log._actions[2].order_type == "stop-limit"
+    assert u1.user_log._actions[2].side == "buy"
+    assert u1.user_log._actions[2].quantity == 10
+    assert u1.user_log._actions[2].stop_price == 10
+    assert u1.user_log._actions[2].price == 10

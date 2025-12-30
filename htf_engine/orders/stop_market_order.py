@@ -1,4 +1,3 @@
-from .order import Order
 from .stop_order import StopOrder
 
 
